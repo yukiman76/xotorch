@@ -21,30 +21,30 @@ import shutil
 import tempfile
 import hashlib
 
-def exo_home() -> Path:
-  return Path(os.environ.get("EXO_HOME", Path.home()/".cache"/"exo"))
+def xot_home() -> Path:
+  return Path(os.environ.get("XOT_HOME", Path.home()/".cache"/"xot"))
 
-def exo_tmp() -> Path:
-  return Path(tempfile.gettempdir())/"exo"
+def xot_tmp() -> Path:
+  return Path(tempfile.gettempdir())/"xot"
 
-async def ensure_exo_home() -> Path:
-  await aios.makedirs(exo_home(), exist_ok=True)
-  return exo_home()
+async def ensure_xot_home() -> Path:
+  await aios.makedirs(xot_home(), exist_ok=True)
+  return xot_home()
 
-async def ensure_exo_tmp() -> Path:
-  await aios.makedirs(exo_tmp(), exist_ok=True)
-  return exo_tmp()
+async def ensure_xot_tmp() -> Path:
+  await aios.makedirs(xot_tmp(), exist_ok=True)
+  return xot_tmp()
 
-async def has_exo_home_read_access() -> bool:
-  try: return await aios.access(exo_home(), os.R_OK)
+async def has_xot_home_read_access() -> bool:
+  try: return await aios.access(xot_home(), os.R_OK)
   except OSError: return False
 
-async def has_exo_home_write_access() -> bool:
-  try: return await aios.access(exo_home(), os.W_OK)
+async def has_xot_home_write_access() -> bool:
+  try: return await aios.access(xot_home(), os.W_OK)
   except OSError: return False
 
 async def ensure_downloads_dir() -> Path:
-  downloads_dir = exo_home()/"downloads"
+  downloads_dir = xot_home()/"downloads"
   await aios.makedirs(downloads_dir, exist_ok=True)
   return downloads_dir
 
@@ -70,7 +70,7 @@ async def seed_models(seed_dir: Union[str, Path]):
           traceback.print_exc()
 
 async def fetch_file_list_with_cache(repo_id: str, revision: str = "main") -> List[Dict[str, Union[str, int]]]:
-  cache_file = (await ensure_exo_tmp())/f"{repo_id.replace('/', '--')}--{revision}--file_list.json"
+  cache_file = (await ensure_xot_tmp())/f"{repo_id.replace('/', '--')}--{revision}--file_list.json"
   if await aios.path.exists(cache_file):
     async with aiofiles.open(cache_file, 'r') as f: return json.loads(await f.read())
   file_list = await fetch_file_list_with_retry(repo_id, revision)
@@ -178,7 +178,7 @@ def calculate_repo_progress(shard: Shard, repo_id: str, revision: str, file_prog
   return RepoProgressEvent(shard, repo_id, revision, len([p for p in file_progress.values() if p.downloaded == p.total]), len(file_progress), all_downloaded_bytes, all_downloaded_bytes_this_session, all_total_bytes, all_speed, all_eta, file_progress, status)
 
 async def get_weight_map(repo_id: str, revision: str = "main") -> Dict[str, str]:
-  target_dir = (await ensure_exo_tmp())/repo_id.replace("/", "--")
+  target_dir = (await ensure_xot_tmp())/repo_id.replace("/", "--")
   index_file = await download_file_with_retry(repo_id, revision, "model.safetensors.index.json", target_dir)
   async with aiofiles.open(index_file, 'r') as f: index_data = json.loads(await f.read())
   return index_data.get("weight_map")

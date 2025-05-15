@@ -2,7 +2,7 @@ import unittest
 
 from xotorch.networking.manual.network_topology_config import NetworkTopology
 
-root_path = "./exo/networking/manual/test_data/"
+root_path = "./xotorch/networking/manual/test_data/"
 
 
 class TestNetworkTopologyConfig(unittest.TestCase):

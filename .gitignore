@@ -1,8 +1,8 @@
 __pycache__/
 .venv*
 test_weights.npz
-.exo_used_ports
-.exo_node_id
+.xot_used_ports
+.xot_node_id
 .idea
 .DS_Store
 
@@ -175,6 +175,6 @@ cython_debug/
 # Aider
 .aider*
 
-exo/tinychat/images/*.png
+xotorch/tinychat/images/*.png
 .vscode/
 build/

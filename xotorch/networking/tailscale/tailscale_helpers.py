@@ -45,10 +45,10 @@ async def update_device_attributes(device_id: str, api_key: str, node_id: str, n
     headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
 
     attributes = {
-      "custom:exo_node_id": node_id.replace('-', '_'), "custom:exo_node_port": node_port, "custom:exo_device_capability_chip": sanitize_attribute(device_capabilities.chip),
-      "custom:exo_device_capability_model": sanitize_attribute(device_capabilities.model), "custom:exo_device_capability_memory": str(device_capabilities.memory),
-      "custom:exo_device_capability_flops_fp16": str(device_capabilities.flops.fp16), "custom:exo_device_capability_flops_fp32": str(device_capabilities.flops.fp32),
-      "custom:exo_device_capability_flops_int8": str(device_capabilities.flops.int8)
+      "custom:xot_node_id": node_id.replace('-', '_'), "custom:xot_node_port": node_port, "custom:xot_device_capability_chip": sanitize_attribute(device_capabilities.chip),
+      "custom:xot_device_capability_model": sanitize_attribute(device_capabilities.model), "custom:xot_device_capability_memory": str(device_capabilities.memory),
+      "custom:xot_device_capability_flops_fp16": str(device_capabilities.flops.fp16), "custom:xot_device_capability_flops_fp32": str(device_capabilities.flops.fp32),
+      "custom:xot_device_capability_flops_int8": str(device_capabilities.flops.int8)
     }
 
     for attr_name, attr_value in attributes.items():
@@ -69,16 +69,16 @@ async def get_device_attributes(device_id: str, api_key: str) -> Tuple[str, int,
       if response.status == 200:
         data = await response.json()
         attributes = data.get("attributes", {})
-        node_id = attributes.get("custom:exo_node_id", "").replace('_', '-')
-        node_port = int(attributes.get("custom:exo_node_port", 0))
+        node_id = attributes.get("custom:xot_node_id", "").replace('_', '-')
+        node_port = int(attributes.get("custom:xot_node_port", 0))
         device_capabilities = DeviceCapabilities(
-          model=attributes.get("custom:exo_device_capability_model", "").replace('_', ' '),
-          chip=attributes.get("custom:exo_device_capability_chip", "").replace('_', ' '),
-          memory=int(attributes.get("custom:exo_device_capability_memory", 0)),
+          model=attributes.get("custom:xot_device_capability_model", "").replace('_', ' '),
+          chip=attributes.get("custom:xot_device_capability_chip", "").replace('_', ' '),
+          memory=int(attributes.get("custom:xot_device_capability_memory", 0)),
           flops=DeviceFlops(
-            fp16=float(attributes.get("custom:exo_device_capability_flops_fp16", 0)),
-            fp32=float(attributes.get("custom:exo_device_capability_flops_fp32", 0)),
-            int8=float(attributes.get("custom:exo_device_capability_flops_int8", 0))
+            fp16=float(attributes.get("custom:xot_device_capability_flops_fp16", 0)),
+            fp32=float(attributes.get("custom:xot_device_capability_flops_fp32", 0)),
+            int8=float(attributes.get("custom:xot_device_capability_flops_int8", 0))
           )
         )
         return node_id, node_port, device_capabilities
@@ -89,7 +89,7 @@ async def get_device_attributes(device_id: str, api_key: str) -> Tuple[str, int,
 
 def parse_device_attributes(data: Dict[str, str]) -> Dict[str, Any]:
   result = {}
-  prefix = "custom:exo_"
+  prefix = "custom:xot_"
   for key, value in data.items():
     if key.startswith(prefix):
       attr_name = key.replace(prefix, "")

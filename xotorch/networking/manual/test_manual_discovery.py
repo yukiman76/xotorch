@@ -8,7 +8,7 @@ from xotorch.networking.grpc.grpc_peer_handle import GRPCPeerHandle
 from xotorch.networking.grpc.grpc_server import GRPCServer
 from xotorch.orchestration.node import Node
 
-root_path = "./exo/networking/manual/test_data/test_config.json"
+root_path = "./xotorch/networking/manual/test_data/test_config.json"
 
 
 class TestSingleNodeManualDiscovery(unittest.IsolatedAsyncioTestCase):

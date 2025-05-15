@@ -83,7 +83,7 @@ class TailscaleDiscovery(Discovery):
           peer_host = device.addresses[0]
           peer_id, peer_port, device_capabilities = await get_device_attributes(device.device_id, self.tailscale_api_key)
           if not peer_id:
-            if DEBUG_DISCOVERY >= 4: print(f"{device.device_id} does not have exo node attributes. skipping.")
+            if DEBUG_DISCOVERY >= 4: print(f"{device.device_id} does not have node attributes. skipping.")
             continue
 
           if self.allowed_node_ids and peer_id not in self.allowed_node_ids:

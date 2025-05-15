@@ -181,7 +181,6 @@ def main(
 if __name__ == "__main__":
   # prompt = "Hello, how are you?"
   prompt = "Tell me a joke."
-  # prompt = "What is the meaning of exo?"
   # prompt = "Tell me a short 4 line haiku"
   # prompt = "In a single word only, what is the last name of the current president of the USA?"
 

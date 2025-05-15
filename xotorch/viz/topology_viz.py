@@ -187,11 +187,11 @@ class TopologyViz:
     # Generate visualization
     visualization = [[" " for _ in range(100)] for _ in range(48)]  # Increased height to 48
 
-    # Add xotorch_text at the top in bright yellow
-    exo_lines = xotorch_text.split("\n")
+    # Add xotorch_text at the top in red
+    xotorch_lines = xotorch_text.split("\n")
     yellow_style = Style(color="bright_yellow")
-    max_line_length = max(len(line) for line in exo_lines)
-    for i, line in enumerate(exo_lines):
+    max_line_length = max(len(line) for line in xotorch_lines)
+    for i, line in enumerate(xotorch_lines):
       centered_line = line.center(max_line_length)
       start_x = (100-max_line_length) // 2 + 15
       colored_line = Text(centered_line, style=yellow_style)
@@ -206,7 +206,7 @@ class TopologyViz:
     if len(self.chatgpt_api_endpoints) > 0:
       info_lines.append(f"ChatGPT API endpoint: {' '.join(self.chatgpt_api_endpoints[:1])}")
 
-    info_start_y = len(exo_lines) + 1
+    info_start_y = len(xotorch_lines) + 1
     for i, line in enumerate(info_lines):
       start_x = (100 - len(line)) // 2 + 15
       for j, char in enumerate(line):

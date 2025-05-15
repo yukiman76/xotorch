@@ -20,7 +20,7 @@ class TraceContext:
 
 class Tracer:
   def __init__(self):
-    self.tracer = trace.get_tracer("exo")
+    self.tracer = trace.get_tracer("xotorch")
     self.contexts: Dict[str, TraceContext] = {}
     self._lock = Lock()
     self.propagator = TraceContextTextMapPropagator()

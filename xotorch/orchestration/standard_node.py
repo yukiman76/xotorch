@@ -88,18 +88,6 @@ class StandardNode(Node):
       if DEBUG >= 1: print(f"Error updating visualization: {e}")
       if DEBUG >= 1: traceback.print_exc()
 
-  def get_supported_inference_engines(self):
-    supported_engine_names = []
-    if self.inference_engine.__class__.__name__ == 'MLXDynamicShardInferenceEngine':
-      supported_engine_names.append('mlx')
-      supported_engine_names.append('tinygrad')
-    elif self.inference_engine.__class__.__name__ == 'TorchDynamicShardInferenceEngine':
-      supported_engine_names.append('torch')
-      supported_engine_names.append('tinygrad')
-    else:
-      supported_engine_names.append('tinygrad')
-    return supported_engine_names
-
   async def broadcast_supported_engines(self, supported_engines_names: List[str]):
     status_message = json.dumps({"type": "supported_inference_engines", "node_id": self.id, "engines": supported_engines_names})
     await self.broadcast_opaque_status("", status_message)
@@ -366,7 +354,7 @@ class StandardNode(Node):
 
   async def select_best_inference_engine(self):
     if self.inference_engine.__class__.__name__ == 'DummyInferenceEngine': return
-    supported_engines = self.get_supported_inference_engines()
+    supported_engines = ['torch']
     await self.broadcast_supported_engines(supported_engines)
     if len(self.get_topology_inference_engines()):
       self.inference_engine = get_inference_engine(supported_engines[0], self.shard_downloader)

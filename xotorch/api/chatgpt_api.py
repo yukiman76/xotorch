@@ -4,14 +4,13 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from transformers import AutoTokenizer
 from typing import List, Literal, Union, Dict, Optional
 from aiohttp import web
 import aiohttp_cors
 import traceback
 import signal
 from xotorch import DEBUG, VERSION
-from xotorch.helpers import PrefixDict, shutdown, get_exo_images_dir
+from xotorch.helpers import PrefixDict, shutdown, get_uuid_images_dir
 from xotorch.inference.tokenizers import resolve_tokenizer
 from xotorch.orchestration import Node
 from xotorch.models import build_base_shard, build_full_shard, model_cards, get_repo, get_supported_models, get_pretty_name
@@ -20,18 +19,10 @@ from PIL import Image
 import numpy as np
 import base64
 from io import BytesIO
-import platform
 from xotorch.download.download_progress import RepoProgressEvent
 from xotorch.download.new_shard_download import delete_model
-import tempfile
-from xotorch.apputil import create_animation_mp4
 from collections import defaultdict
-
-if platform.system().lower() == "darwin" and platform.machine().lower() == "arm64":
-  import mlx.core as mx
-else:
-  import numpy as mx
-
+import numpy as mx
 
 class Message:
   def __init__(self, role: str, content: Union[str, List[Dict[str, Union[str, Dict[str, str]]]]], tools: Optional[List[Dict]] = None):
@@ -72,7 +63,7 @@ def generate_completion(
     "object": object_type,
     "created": int(time.time()),
     "model": chat_request.model,
-    "system_fingerprint": f"exo_{VERSION}",
+    "system_fingerprint": f"xotorch_{VERSION}",
     "choices": [{
       "index": 0,
       "message": {"role": "assistant", "content": tokenizer.decode(tokens)},
@@ -227,7 +218,6 @@ class ChatGPTAPI:
     cors.add(self.app.router.add_post("/quit", self.handle_quit), {"*": cors_options})
     cors.add(self.app.router.add_delete("/models/{model_name}", self.handle_delete_model), {"*": cors_options})
     cors.add(self.app.router.add_get("/initial_models", self.handle_get_initial_models), {"*": cors_options})
-    cors.add(self.app.router.add_post("/create_animation", self.handle_create_animation), {"*": cors_options})
     cors.add(self.app.router.add_post("/download", self.handle_post_download), {"*": cors_options})
     cors.add(self.app.router.add_get("/v1/topology", self.handle_get_topology), {"*": cors_options})
     cors.add(self.app.router.add_get("/topology", self.handle_get_topology), {"*": cors_options})
@@ -239,7 +229,7 @@ class ChatGPTAPI:
       self.app.router.add_static("/", self.static_dir, name="static")
       
     # Always add images route, regardless of compilation status
-    self.images_dir = get_exo_images_dir()
+    self.images_dir = get_uuid_images_dir()
     self.images_dir.mkdir(parents=True, exist_ok=True)
     self.app.router.add_static('/images/', self.images_dir, name='static_images')
 
@@ -291,7 +281,7 @@ class ChatGPTAPI:
       return web.json_response({"detail": f"Server error: {str(e)}"}, status=500)
 
   async def handle_get_models(self, request):
-    models_list = [{"id": model_name, "object": "model", "owned_by": "exo", "ready": True} for model_name, _ in model_cards.items()]
+    models_list = [{"id": model_name, "object": "model", "owned_by": os.getenv("XOT_UUID", "self"), "ready": True} for model_name, _ in model_cards.items()]
     return web.json_response({"object": "list", "data": models_list})
 
   async def handle_post_chat_token_encode(self, request):
@@ -565,37 +555,6 @@ class ChatGPTAPI:
         "loading": True  # Add loading state
       }
     return web.json_response(model_data)
-
-  async def handle_create_animation(self, request):
-    try:
-      data = await request.json()
-      replacement_image_path = data.get("replacement_image_path")
-      device_name = data.get("device_name", "Local Device")
-      prompt_text = data.get("prompt", "")
-
-      if DEBUG >= 2: print(f"Creating animation with params: replacement_image={replacement_image_path}, device={device_name}, prompt={prompt_text}")
-
-      if not replacement_image_path:
-        return web.json_response({"error": "replacement_image_path is required"}, status=400)
-
-      # Create temp directory if it doesn't exist
-      tmp_dir = Path(tempfile.gettempdir())/"exo_animations"
-      tmp_dir.mkdir(parents=True, exist_ok=True)
-
-      # Generate unique output filename in temp directory
-      output_filename = f"animation_{uuid.uuid4()}.mp4"
-      output_path = str(tmp_dir/output_filename)
-
-      if DEBUG >= 2: print(f"Animation temp directory: {tmp_dir}, output file: {output_path}, directory exists: {tmp_dir.exists()}, directory permissions: {oct(tmp_dir.stat().st_mode)[-3:]}")
-
-      # Create the animation
-      create_animation_mp4(replacement_image_path, output_path, device_name, prompt_text)
-
-      return web.json_response({"status": "success", "output_path": output_path})
-
-    except Exception as e:
-      if DEBUG >= 2: traceback.print_exc()
-      return web.json_response({"error": str(e)}, status=500)
 
   async def handle_post_download(self, request):
     try:

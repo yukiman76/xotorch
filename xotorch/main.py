@@ -21,8 +21,8 @@ from xotorch.topology.ring_memory_weighted_partitioning_strategy import RingMemo
 from xotorch.api import ChatGPTAPI
 from xotorch.download.shard_download import ShardDownloader, NoopShardDownloader
 from xotorch.download.download_progress import RepoProgressEvent
-from xotorch.download.new_shard_download import new_shard_downloader, has_exo_home_read_access, has_exo_home_write_access, ensure_exo_home, seed_models
-from xotorch.helpers import print_yellow_exo, find_available_port, DEBUG, get_system_info, get_or_create_node_id, get_all_ip_addresses_and_interfaces, terminal_link, shutdown
+from xotorch.download.new_shard_download import new_shard_downloader, has_xot_home_read_access, has_xot_home_write_access, ensure_xot_home, seed_models
+from xotorch.helpers import print_red_xot, find_available_port, DEBUG, get_system_info, get_or_create_node_id, get_all_ip_addresses_and_interfaces, terminal_link, shutdown
 from xotorch.inference.shard import Shard
 from xotorch.inference.inference_engine import get_inference_engine
 from xotorch.inference.tokenizers import resolve_tokenizer
@@ -75,7 +75,7 @@ parser.add_argument("model_name", nargs="?", help="Model name to run")
 parser.add_argument("--default-model", type=str, default=None, help="Default model")
 parser.add_argument("--iters", type=int, default=100, help="Training iterations")
 parser.add_argument("--save-every", type=int, default=5, help="Save the model every N iterations.")
-parser.add_argument("--data", type=str, default="exo/train/data/lora", help="Directory where training data lives")
+parser.add_argument("--data", type=str, default="xotorch/train/data/lora", help="Directory where training data lives")
 parser.add_argument("--batch-size", type=int, default=1, help="Minibatch size.")
 parser.add_argument("--resume-checkpoint", type=str, default=None, help="Path to a custom checkpoint to load")
 parser.add_argument("--save-checkpoint-dir", type=str, default="checkpoints", help="Path to a folder where checkpoints are stored")
@@ -107,18 +107,13 @@ parser.add_argument("--system-prompt", type=str, default=None, help="System prom
 args = parser.parse_args()
 print(f"Selected inference engine: {args.inference_engine}")
 
-print_yellow_exo()
+print_red_xot()
 
 system_info = get_system_info()
 print(f"Detected system: {system_info}")
 
 shard_downloader: ShardDownloader = new_shard_downloader(args.max_parallel_downloads) if args.inference_engine != "dummy" else NoopShardDownloader()
-inference_engine_name = args.inference_engine or ("mlx" if system_info == "Apple Silicon Mac" else "tinygrad")
-print(f"Inference engine name after selection: {inference_engine_name}")
-
-os.environ["EXO_INFER_ENGINE"] = inference_engine_name
-
-inference_engine = get_inference_engine(inference_engine_name, shard_downloader)
+inference_engine = get_inference_engine("torch", shard_downloader)
 print(f"Using inference engine: {inference_engine.__class__.__name__} with shard downloader: {shard_downloader.__class__.__name__}")
 
 if args.node_port is None:
@@ -326,13 +321,13 @@ async def train_model_cli(node: Node, model_name, dataloader, batch_size, iters,
       await hold_outstanding(node)
   await hold_outstanding(node)
 
-async def check_exo_home():
-  home, has_read, has_write = await ensure_exo_home(), await has_exo_home_read_access(), await has_exo_home_write_access()
-  if DEBUG >= 1: print(f"exo home directory: {home}")
+async def check_xot_home():
+  home, has_read, has_write = await ensure_xot_home(), await has_xot_home_read_access(), await has_xot_home_write_access()
+  if DEBUG >= 1: print(f"xotorch home directory: {home}")
   print(f"{has_read=}, {has_write=}")
   if not has_read or not has_write:
     print(f"""
-          WARNING: Limited permissions for exo home directory: {home}.
+          WARNING: Limited permissions for xotorch home directory: {home}.
           This may prevent model downloads from working correctly.
           {"❌ No read access" if not has_read else ""}
           {"❌ No write access" if not has_write else ""}
@@ -341,8 +336,8 @@ async def check_exo_home():
 async def main():
   loop = asyncio.get_running_loop()
 
-  try: await check_exo_home()
-  except Exception as e: print(f"Error checking exo home directory: {e}")
+  try: await check_xot_home()
+  except Exception as e: print(f"Error checking xotorch home directory: {e}")
 
   if not args.models_seed_dir is None:
     try:
