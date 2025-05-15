@@ -40,31 +40,20 @@ install_requires = [
 
 extras_require = {
   "formatting": ["yapf==0.40.2",],
-  "apple_silicon": [
-    "mlx==0.22.0",
-    "mlx-lm==0.21.1",
-  ],
   "windows": ["pywin32==308","winloop==0.1.8"],
   "nvidia-gpu": ["nvidia-ml-py==12.560.30",],
   "amd-gpu": ["pyrsmi==0.2.0"],
-  "other-os": ["uvloop==0.21.0"],
+  "non-windows": ["uvloop==0.21.0"],
 }
 
-USE_APPLE = False
-USE_WIN = False
-
-# Check if running on macOS with Apple Silicon
-if sys.platform.startswith("darwin") and platform.machine() == "arm64":
-  install_requires.extend(extras_require["apple_silicon"])
-  USE_APPLE = True
-
+use_win = False
 # Check if running Windows
 if sys.platform.startswith("win32"):
   install_requires.extend(extras_require["windows"])
-  USE_WIN = True
+  use_win = True
 
-if not USE_WIN and not USE_APPLE:
-  install_requires.extend(extras_require["other-os"])
+if not use_win:
+  install_requires.extend(extras_require["non-windows"])
 
 
 

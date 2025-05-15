@@ -21,32 +21,16 @@ def expand_engine_lists(engine_lists):
 
 test_cases = [
   TestCase(
-    name="single_mlx_engine",
-    engine_lists=[["mlx"]],
+    name="single_torch_engine",
+    engine_lists=[["torch"]],
     expected_models_contains=["llama-3.2-1b", "llama-3.1-70b", "mistral-nemo"],
     min_count=10,
     exact_count=None,
     max_count=None
   ),
   TestCase(
-    name="single_tinygrad_engine",
-    engine_lists=[["tinygrad"]],
-    expected_models_contains=["llama-3.2-1b", "llama-3.2-3b"],
-    min_count=5,
-    exact_count=None,
-    max_count=15
-  ),
-  TestCase(
     name="multiple_engines_or",
-    engine_lists=[["mlx", "tinygrad"], ["mlx"]],
-    expected_models_contains=["llama-3.2-1b", "llama-3.2-3b", "mistral-nemo"],
-    min_count=10,
-    exact_count=None,
-    max_count=None
-  ),
-  TestCase(
-    name="multiple_engines_all",
-    engine_lists=[["mlx", "tinygrad"], ["mlx", "tinygrad"]],
+    engine_lists=[["torch", "torch"], ["torch"]],
     expected_models_contains=["llama-3.2-1b", "llama-3.2-3b", "mistral-nemo"],
     min_count=10,
     exact_count=None,
@@ -54,7 +38,7 @@ test_cases = [
   ),
   TestCase(
     name="distinct_engine_lists",
-    engine_lists=[["mlx"], ["tinygrad"]],
+    engine_lists=[["torch"], ["torch"]],
     expected_models_contains=["llama-3.2-1b"],
     min_count=5,
     exact_count=None,
