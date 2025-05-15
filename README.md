@@ -12,6 +12,8 @@ Distributed inference and training with a focus on PyTorch
 
 *Fork of [Exo](https://github.com/exo-explore/exo)*
 
+[discord](https://discord.gg/qUcSCehn) | [X](https://x.com/shamantekllc)
+
 ## Install and Run
 
 If you are not on windows, run the **install.sh** in your terminal
