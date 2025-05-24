@@ -94,7 +94,7 @@ parser.add_argument("--wait-for-peers", type=int, default=0, help="Number of pee
 parser.add_argument("--chatgpt-api-port", type=int, default=52415, help="ChatGPT API port")
 parser.add_argument("--chatgpt-api-response-timeout", type=int, default=900, help="ChatGPT API response timeout in seconds")
 parser.add_argument("--max-generate-tokens", type=int, default=10000, help="Max tokens to generate in each request")
-parser.add_argument("--inference-engine", type=str, default=None, help="Inference engine to use (torch, mlx, tinygrad, or dummy)")
+parser.add_argument("--inference-engine", type=str, default=None, help="Inference engine to use (torch or dummy)")
 parser.add_argument("--disable-tui", action=argparse.BooleanOptionalAction, help="Disable TUI")
 parser.add_argument("--run-model", type=str, help="Specify a model to run directly")
 parser.add_argument("--prompt", type=str, help="Prompt for the model when using --run-model", default="Who are you?")
@@ -105,6 +105,10 @@ parser.add_argument("--node-id-filter", type=str, default=None, help="Comma sepa
 parser.add_argument("--interface-type-filter", type=str, default=None, help="Comma separated list of allowed interface types (only for UDP discovery)")
 parser.add_argument("--system-prompt", type=str, default=None, help="System prompt for the ChatGPT API")
 args = parser.parse_args()
+
+if args.inference_engine != "dummy" and args.inference_engine != "torch":
+  args.inference_engine = "torch"
+
 print(f"Selected inference engine: {args.inference_engine}")
 
 print_red_xot()
@@ -113,7 +117,7 @@ system_info = get_system_info()
 print(f"Detected system: {system_info}")
 
 shard_downloader: ShardDownloader = new_shard_downloader(args.max_parallel_downloads) if args.inference_engine != "dummy" else NoopShardDownloader()
-inference_engine = get_inference_engine("torch", shard_downloader)
+inference_engine = get_inference_engine(args.inference_engine, shard_downloader)
 print(f"Using inference engine: {inference_engine.__class__.__name__} with shard downloader: {shard_downloader.__class__.__name__}")
 
 if args.node_port is None:
