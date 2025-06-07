@@ -30,9 +30,9 @@ class TopologyViz:
     self.console = Console()
     self.layout = Layout()
     self.layout.split(Layout(name="main"), Layout(name="prompt_output", size=15), Layout(name="download", size=25))
-    self.main_panel = Panel(self._generate_main_layout(), title="0 Node Cluster", border_style="bright_yellow")
-    self.prompt_output_panel = Panel("", title="Prompt and Output", border_style="green")
-    self.download_panel = Panel("", title="Download Progress", border_style="cyan")
+    self.main_panel = Panel(self._generate_main_layout(), title="0 Node Cluster", border_style="red1")
+    self.prompt_output_panel = Panel("", title="Prompt and Output", border_style="deep_pink4")
+    self.download_panel = Panel("", title="Download Progress", border_style="bright_white")
     self.layout["main"].update(self.main_panel)
     self.layout["prompt_output"].update(self.prompt_output_panel)
     self.layout["download"].update(self.download_panel)
@@ -92,7 +92,7 @@ class TopologyViz:
     lines_per_request = available_lines // len(requests) if requests else 0
 
     for (prompt, output) in reversed(requests):
-      prompt_icon, output_icon = "💬️", "🤖"
+      # prompt_icon, output_icon = "💬️", "🤖"
 
       # Equal space allocation for prompt and output
       max_prompt_lines = lines_per_request // 2
@@ -128,8 +128,9 @@ class TopologyViz:
           else:
             prompt_lines[-1] = last_line[:max_width-4] + " ..."
 
-      prompt_text = Text(f"{prompt_icon} ", style="bold bright_blue")
-      prompt_text.append('\n'.join(prompt_lines), style="white")
+      prompt_lines = '\n'.join(prompt_lines)
+      prompt_text = Text(f"[Prompt]\n", style="bold grey70")
+      prompt_text.append(f"{prompt_lines}", style="deep_sky_blue1")
       content.append(prompt_text)
 
       # Process output with similar word wrapping
@@ -163,16 +164,17 @@ class TopologyViz:
             else:
               output_lines[-1] = last_line[:max_width-4] + " ..."
 
-        output_text = Text(f"{output_icon} ", style="bold bright_magenta")
-        output_text.append('\n'.join(output_lines), style="white")
+        output_lines = '\n'.join(output_lines)
+        output_text = Text(f"[Response]\n", style="bold grey70")
+        output_text.append(f"{output_lines}\n", style="hot_pink")
         content.append(output_text)
 
       content.append(Text())  # Empty line between entries
 
     return Panel(
       Group(*content),
-      title="",
-      border_style="cyan",
+      title="Chat",
+      border_style="orange1",
       height=panel_height,
       expand=True
     )
@@ -189,12 +191,12 @@ class TopologyViz:
 
     # Add xotorch_text at the top in red
     xotorch_lines = xotorch_text.split("\n")
-    yellow_style = Style(color="bright_yellow")
+    red_style = Style(color="red1")
     max_line_length = max(len(line) for line in xotorch_lines)
     for i, line in enumerate(xotorch_lines):
       centered_line = line.center(max_line_length)
       start_x = (100-max_line_length) // 2 + 15
-      colored_line = Text(centered_line, style=yellow_style)
+      colored_line = Text(centered_line, style=red_style)
       for j, char in enumerate(str(colored_line)):
         if 0 <= start_x + j < 100 and i < len(visualization):
           visualization[i][start_x + j] = char

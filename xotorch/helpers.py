@@ -81,9 +81,9 @@ def print_xot():
 
 
 def print_red_xot():
-  yellow = "\x1b[31m"  # ANSI escape code for red
+  red = "\x1b[31m"  # ANSI escape code for red
   reset = "\x1b[0m"  # ANSI escape code to reset color
-  print(f"{yellow}{xotorch_text}{reset}")
+  print(f"{red}{xotorch_text}{reset}")
 
 
 def terminal_link(uri, label=None):
