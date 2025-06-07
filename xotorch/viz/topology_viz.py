@@ -166,7 +166,7 @@ class TopologyViz:
 
         output_lines = '\n'.join(output_lines)
         output_text = Text(f"[Response]\n", style="bold grey70")
-        output_text.append(f"{output_lines}\n", style="hot_pink")
+        output_text.append(f"{output_lines}\n", style="white")
         content.append(output_text)
 
       content.append(Text())  # Empty line between entries

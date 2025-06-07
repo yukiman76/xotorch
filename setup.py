@@ -1,5 +1,4 @@
 import sys
-import platform
 import subprocess
 
 from setuptools import find_packages, setup
@@ -28,7 +27,6 @@ install_requires = [
   "tqdm==4.66.4",
   "transformers==4.46.3",
   "uuid==1.30",
-  "tinygrad==0.10.2",
   "torch==2.6.0",
   "accelerate==0.34.2",
   "torchtune==0.5.0",
