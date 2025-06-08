@@ -15,6 +15,7 @@ from rich.layout import Layout
 from rich.syntax import Syntax
 from rich.panel import Panel
 from rich.markdown import Markdown
+from rich.columns import Columns
 
 
 class TopologyViz:
@@ -28,17 +29,20 @@ class TopologyViz:
     self.requests: OrderedDict[str, Tuple[str, str]] = {}
 
     self.console = Console()
+    self.console_width = self.console.size.width
+    self.console_height = self.console.size.height
     self.layout = Layout()
-    self.layout.split(Layout(name="main"), Layout(name="prompt_output", size=15), Layout(name="download", size=25))
-    self.main_panel = Panel(self._generate_main_layout(), title="0 Node Cluster", border_style="red1")
+    self.layout.split(Layout(name="main"), Layout(name="download", size=25))
+    self.ninfo_panel = Panel(self._generate_ninfo_layout(), title="0 Node Cluster", border_style="red1")
     self.prompt_output_panel = Panel("", title="Prompt and Output", border_style="deep_pink4")
     self.download_panel = Panel("", title="Download Progress", border_style="bright_white")
-    self.layout["main"].update(self.main_panel)
-    self.layout["prompt_output"].update(self.prompt_output_panel)
+    # self.layout["node_info"].update(self.ninfo_panel)
+    # self.layout["prompt_output"].update(self.prompt_output_panel)
     self.layout["download"].update(self.download_panel)
+    
 
     # Initially hide the prompt_output panel
-    self.layout["prompt_output"].visible = False
+    # self.layout["prompt_output"].visible = False
     self.live_panel = Live(self.layout, auto_refresh=False, console=self.console)
     self.live_panel.start()
 
@@ -59,18 +63,29 @@ class TopologyViz:
     self.refresh()
 
   def refresh(self):
-    self.main_panel.renderable = self._generate_main_layout()
+    self.ninfo_panel.renderable = self._generate_ninfo_layout()
     # Update the panel title with the number of nodes and partitions
     node_count = len(self.topology.nodes)
-    self.main_panel.title = f"{node_count} Node Cluster"
+    self.ninfo_panel.title = f"{node_count} Node Cluster"
 
     # Update and show/hide prompt and output panel
-    if any(r[0] or r[1] for r in self.requests.values()):
-      self.prompt_output_panel = self._generate_prompt_output_layout()
-      self.layout["prompt_output"].update(self.prompt_output_panel)
-      self.layout["prompt_output"].visible = True
-    else:
-      self.layout["prompt_output"].visible = False
+    # if any(r[0] or r[1] for r in self.requests.values()):
+    self.prompt_output_panel = self._generate_prompt_output_layout()
+    self.prompt_output_panel.width = int(self.console_width/2)
+    self.prompt_output_panel.height = self.console_height - 2
+    # self.layout["prompt_output"].update(self.prompt_output_panel)
+    #   self.layout["prompt_output"].visible = True
+    # else:
+    #   self.layout["prompt_output"].visible = False
+
+    self.ninfo_panel.width = int(self.console_width/2)
+    self.ninfo_panel.height = self.console_height - 2
+
+    self.layout["main"].update(
+      Columns([
+        self.ninfo_panel,
+        self._generate_prompt_output_layout()
+      ]))
 
     # Only show download_panel if there are in-progress downloads
     if any(progress.status == "in_progress" for progress in self.node_download_progress.values()):
@@ -84,10 +99,10 @@ class TopologyViz:
   def _generate_prompt_output_layout(self) -> Panel:
     content = []
     requests = list(self.requests.values())[-3:]  # Get the 3 most recent requests
-    max_width = self.console.width - 6  # Full width minus padding and icon
+    max_width = int(self.console_width/2)  # Full width minus padding and icon
 
     # Calculate available height for content
-    panel_height = 15  # Fixed panel height
+    panel_height = self.console_height  # Fixed panel height
     available_lines = panel_height - 2  # Subtract 2 for panel borders
     lines_per_request = available_lines // len(requests) if requests else 0
 
@@ -174,17 +189,15 @@ class TopologyViz:
     return Panel(
       Group(*content),
       title="Chat",
-      border_style="orange1",
-      height=panel_height,
-      expand=True
+      border_style="orange1"
     )
 
-  def _generate_main_layout(self) -> str:
+  def _generate_ninfo_layout(self) -> str:
     # Calculate visualization parameters
     num_partitions = len(self.partitions)
     radius_x = 30
     radius_y = 12
-    center_x, center_y = 50, 24  # Increased center_y to add more space
+    center_x, center_y = 20, 24  # Increased center_y to add more space
 
     # Generate visualization
     visualization = [[" " for _ in range(100)] for _ in range(48)]  # Increased height to 48
@@ -215,41 +228,41 @@ class TopologyViz:
         if 0 <= start_x + j < 100 and info_start_y + i < 48:
           visualization[info_start_y + i][start_x + j] = char
 
-    # Calculate total FLOPS and position on the bar
-    total_flops = sum(self.topology.nodes.get(partition.node_id, UNKNOWN_DEVICE_CAPABILITIES).flops.fp16 for partition in self.partitions)
-    bar_pos = (math.tanh(total_flops**(1/3)/2.5 - 2) + 1)
+    # # Calculate total FLOPS and position on the bar
+    # total_flops = sum(self.topology.nodes.get(partition.node_id, UNKNOWN_DEVICE_CAPABILITIES).flops.fp16 for partition in self.partitions)
+    # bar_pos = (math.tanh(total_flops**(1/3)/2.5 - 2) + 1)
 
-    # Add GPU poor/rich bar
-    bar_width = 30
-    bar_start_x = (100-bar_width) // 2
-    bar_y = info_start_y + len(info_lines) + 1
+    # # Add GPU poor/rich bar
+    # bar_width = 30
+    # bar_start_x = (100-bar_width) // 2
+    # bar_y = info_start_y + len(info_lines) + 1
 
-    # Create a gradient bar using emojis
-    gradient_bar = Text()
-    emojis = ["🟥", "🟧", "🟨", "🟩"]
-    for i in range(bar_width):
-      emoji_index = min(int(i/(bar_width/len(emojis))), len(emojis) - 1)
-      gradient_bar.append(emojis[emoji_index])
+    # # Create a gradient bar using emojis
+    # gradient_bar = Text()
+    # emojis = ["🟥", "🟧", "🟨", "🟩"]
+    # for i in range(bar_width):
+    #   emoji_index = min(int(i/(bar_width/len(emojis))), len(emojis) - 1)
+    #   gradient_bar.append(emojis[emoji_index])
 
-    # Add the gradient bar to the visualization
-    visualization[bar_y][bar_start_x - 1] = "["
-    visualization[bar_y][bar_start_x + bar_width] = "]"
-    for i, segment in enumerate(str(gradient_bar)):
-      visualization[bar_y][bar_start_x + i] = segment
+    # # Add the gradient bar to the visualization
+    # visualization[bar_y][bar_start_x - 1] = "["
+    # visualization[bar_y][bar_start_x + bar_width] = "]"
+    # for i, segment in enumerate(str(gradient_bar)):
+    #   visualization[bar_y][bar_start_x + i] = segment
 
-    # Add labels
-    visualization[bar_y - 1][bar_start_x - 10:bar_start_x - 3] = "GPU poor"
-    visualization[bar_y - 1][bar_start_x + bar_width*2 + 2:bar_start_x + bar_width*2 + 11] = "GPU rich"
+    # # Add labels
+    # visualization[bar_y - 1][bar_start_x - 10:bar_start_x - 3] = "GPU poor"
+    # visualization[bar_y - 1][bar_start_x + bar_width*2 + 2:bar_start_x + bar_width*2 + 11] = "GPU rich"
 
-    # Add position indicator and FLOPS value
-    pos_x = bar_start_x + int(bar_pos*bar_width)
-    flops_str = f"{total_flops:.2f} TFLOPS"
-    visualization[bar_y - 1][pos_x] = "▼"
-    visualization[bar_y + 1][pos_x - len(flops_str) // 2:pos_x + len(flops_str) // 2 + len(flops_str) % 2] = flops_str
-    visualization[bar_y + 2][pos_x] = "▲"
+    # # Add position indicator and FLOPS value
+    # pos_x = bar_start_x + int(bar_pos*bar_width)
+    # flops_str = f"{total_flops:.2f} TFLOPS"
+    # visualization[bar_y - 1][pos_x] = "▼"
+    # visualization[bar_y + 1][pos_x - len(flops_str) // 2:pos_x + len(flops_str) // 2 + len(flops_str) % 2] = flops_str
+    # visualization[bar_y + 2][pos_x] = "▲"
 
-    # Add an extra empty line for spacing
-    bar_y += 4
+    # # Add an extra empty line for spacing
+    # bar_y += 4
 
     for i, partition in enumerate(self.partitions):
       device_capabilities = self.topology.nodes.get(partition.node_id, UNKNOWN_DEVICE_CAPABILITIES)
