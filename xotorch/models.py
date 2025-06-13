@@ -93,12 +93,12 @@ model_cards = {
   "deepseek-v3": { "layers": 61, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-V3-bf16", }, },
   "deepseek-r1": { "layers": 61, "repo": { "TorchDynamicShardInferenceEngine": "deepseek-ai/DeepSeek-R1", }, },
   ### deepseek distills
-  "deepseek-r1-distill-qwen-1.5b": { "layers": 28, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-1.5B-unsloth-bnb-4bit", }, },
-  "deepseek-r1-distill-qwen-7b": { "layers": 28, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-7B-bnb-4bit", }, },
-  "deepseek-r1-distill-qwen-14b": { "layers": 48, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-14B-bnb-4bit", }, },
-  "deepseek-r1-distill-qwen-32b": { "layers": 64, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-32B-bnb-4bit", }, },
-  "deepseek-r1-distill-llama-8b": { "layers": 32, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Llama-8B-bnb-4bit", }, },
-  "deepseek-r1-distill-llama-70b": { "layers": 80, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Llama-70B-bnb-4bit", }, },
+  "deepseek-r1-distill-qwen-1.5b": { "layers": 28, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-1.5B", }, },
+  "deepseek-r1-distill-qwen-7b": { "layers": 28, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-7B", }, },
+  "deepseek-r1-distill-qwen-14b": { "layers": 48, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-14B", }, },
+  "deepseek-r1-distill-qwen-32b": { "layers": 64, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Qwen-32B", }, },
+  "deepseek-r1-distill-llama-8b": { "layers": 32, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Llama-8B", }, },
+  "deepseek-r1-distill-llama-70b": { "layers": 80, "repo": { "TorchDynamicShardInferenceEngine": "unsloth/DeepSeek-R1-Distill-Llama-70B", }, },
   ### llava
   "llava-1.5-7b-hf": {
     "layers": 32,
@@ -108,61 +108,55 @@ model_cards = {
   "qwen-2.5-0.5b": {
     "layers": 28,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-0.5B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-0.5B-Instruct"
     },
   },
   "qwen-2.5-1.5b": {
     "layers": 28,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-1.5B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-1.5B-Instruct"
     },
   },
   "qwen-2.5-coder-1.5b": {
     "layers": 28,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-Coder-1.5B-Instruct"
     },
   },
   "qwen-2.5-3b": {
     "layers": 36,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-3B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-3B-Instruct"
     },
   },
   "qwen-2.5-coder-3b": {
     "layers": 36,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-Coder-3B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-Coder-3B-Instruct"
     },
   },
   "qwen-2.5-7b": {
     "layers": 28,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-7B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-7B-Instruct"
     },
   },
   "qwen-2.5-coder-7b": {
     "layers": 28,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-Coder-7B-Instruct"
-    },
-  },
-  "qwen-2.5-math-7b": {
-    "layers": 28,
-    "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-Math-7B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-Coder-7B-Instruct"
     },
   },
   "qwen-2.5-14b": {
     "layers": 48,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-14B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-14B-Instruct"
     },
   },
   "qwen-2.5-coder-14b": {
     "layers": 48,
     "repo": {
-      "TorchDynamicShardInferenceEngine": "Qwen/Qwen2.5-Coder-14B-Instruct"
+      "TorchDynamicShardInferenceEngine": "unsloth/Qwen2.5-Coder-14B-Instruct"
     },
   },
   "qwen-2.5-32b": {
@@ -194,17 +188,12 @@ model_cards = {
     "layers": 80,
     "repo": {"TorchDynamicShardInferenceEngine": "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",},
   },
-  # gemma
-  "gemma3-1b": {
-    "layers": 26,
-    "repo": {"TorchDynamicShardInferenceEngine": "unsloth/gemma-3-1b-it",},
-  },
   # stable diffusion
   # "stable-diffusion-2-1-base": {"layers": 31, "repo": {"TorchDynamicShardInferenceEngine": "stabilityai/stable-diffusion-2-1-base"}},
   # phi
   "phi-4-mini-instruct": {
     "layers": 40,
-    "repo": {"TorchDynamicShardInferenceEngine": "unsloth/Phi-4-mini-instruct-unsloth-bnb-4bit",},
+    "repo": {"TorchDynamicShardInferenceEngine": "microsoft/Phi-4-mini-instruct",},
   },
   # dummy
   "dummy": {
