@@ -15,28 +15,10 @@ model_cards = {
       "TorchDynamicShardInferenceEngine": "unsloth/Llama-3.2-1B-Instruct"
     },
   },
-  "llama-3.2-1b-8bit": {
-    "layers": 16,
-    "repo": {
-      "TorchDynamicShardInferenceEngine": "unsloth/Llama-3.2-1B-Instruct"
-    },
-  },
   "llama-3.2-3b": {
     "layers": 28,
     "repo": {
       "TorchDynamicShardInferenceEngine": "unsloth/Llama-3.2-3B-Instruct"
-    },
-  },
-  "llama-3.2-3b-8bit": {
-    "layers": 28,
-    "repo": {
-      "TorchDynamicShardInferenceEngine": "unsloth/Llama-3.2-3B-Instruct",
-    },
-  },
-  "llama-3.2-3b-bf16": {
-    "layers": 28,
-    "repo": {
-      "TorchDynamicShardInferenceEngine": "unsloth/Llama-3.2-3B-Instruct",
     },
   },
   "llama-3.1-8b": {
@@ -46,12 +28,6 @@ model_cards = {
     },
   },
   "llama-3.1-70b": {
-    "layers": 80,
-    "repo": {
-      "TorchDynamicShardInferenceEngine": "unsloth/Meta-Llama-3.1-70B-Instruct",
-    },
-  },
-  "llama-3.1-70b-bf16": {
     "layers": 80,
     "repo": {
       "TorchDynamicShardInferenceEngine": "unsloth/Meta-Llama-3.1-70B-Instruct",
