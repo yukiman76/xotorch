@@ -131,6 +131,10 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         print("encoded_wrapper called")
         print(f"tokens: {tokens}")
 
+      # Reset state
+      self.state = ShardInferenceState(device=self.device)  # ← FULL reset
+      self.state.curr_pos = 0
+
       # if going past max, just take from max onward
       if len(tokens) > self.sharded_model.max_generated_tokens:
         max_gen_tokens = self.sharded_model.max_generated_tokens
@@ -239,6 +243,7 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
       print("infer_tensor called")
       print(f"shard: {shard}")
       print(f"input_data: {input_data}")
+      print(f"state {self.state}")
 
     if inference_state.get("tokens") is not None:
       self.state.from_dict(inference_state)
@@ -256,6 +261,10 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
       input_tensor = torch.tensor(input_data).to(
         device=self.device
       )
+
+      # possible issue 10 fix
+      # if input_tensor.size(-1) > 1:
+      #   self.state.curr_pos = 0
 
     if self.use_cache and not self.cache_setup:
       if input_tensor is not None:
