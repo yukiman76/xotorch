@@ -27,13 +27,15 @@ install_requires = [
   "tqdm==4.66.4",
   "transformers==4.46.3",
   "uuid==1.30",
-  "torch==2.6.0",
+  "torch==2.7.1",
   "accelerate==0.34.2",
-  "torchtune==0.5.0",
+  "torchtune==0.6.1",
   "torchao==0.8.0",
   "pytest==8.3.3",
   "pytest-asyncio==0.24.0",
   "scapy==2.6.1",
+  "sympy==1.14.0",
+  "torchdata==0.11.0",
 ]
 
 extras_require = {

@@ -52,8 +52,6 @@ class InferenceEngine(ABC):
 
 
 inference_engine_classes = {
-  "mlx": "MLXDynamicShardInferenceEngine",
-  "tinygrad": "TinygradDynamicShardInferenceEngine",
   "dummy": "DummyInferenceEngine",
   "torch": "TorchDynamicShardInferenceEngine"
 }
@@ -62,17 +60,7 @@ inference_engine_classes = {
 def get_inference_engine(inference_engine_name: str, shard_downloader: ShardDownloader):
   if DEBUG >= 2:
     print(f"get_inference_engine called with: {inference_engine_name}")
-  if inference_engine_name == "mlx":
-    from xotorch.inference.mlx.sharded_inference_engine import MLXDynamicShardInferenceEngine
-
-    return MLXDynamicShardInferenceEngine(shard_downloader)
-  elif inference_engine_name == "tinygrad":
-    from xotorch.inference.tinygrad.inference import TinygradDynamicShardInferenceEngine
-    import tinygrad.helpers
-    tinygrad.helpers.DEBUG.value = int(os.getenv("TINYGRAD_DEBUG", default="0"))
-
-    return TinygradDynamicShardInferenceEngine(shard_downloader)
-  elif inference_engine_name == "torch":
+  if inference_engine_name == "torch":
     from xotorch.inference.torch.sharded_inference_engine import TorchDynamicShardInferenceEngine
 
     return TorchDynamicShardInferenceEngine(shard_downloader)

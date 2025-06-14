@@ -28,6 +28,8 @@ def GeneralMHA(
   attn_bias = config.get("attn_bias", False)
   output_bias = config.get("attn_bias", False)
 
+  if DEBUG >= 2: print(f"GeneralMHA loading model {shard.model_id}")
+
   if "llama" in shard.model_id or "Llama" in shard.model_id:
     # rope scaling config
     rope = Llama3ScaledRoPE(
