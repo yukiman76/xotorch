@@ -199,8 +199,10 @@ async def linux_device_capabilities() -> DeviceCapabilities:
 
         gpu_flops = CHIP_FLOPS.get(gpu_name)
 
+        print(f"{gpu_flops=}")
+
         if gpu_flops:
-          gpus_flops.fp32 += gpus_flops.fp32
+          gpus_flops.fp32 += gpu_flops.fp32
           gpus_flops.fp16 += gpu_flops.fp16
           gpus_flops.int8 += gpu_flops.int8
       
