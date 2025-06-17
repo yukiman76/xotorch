@@ -213,8 +213,8 @@ async def linux_device_capabilities() -> DeviceCapabilities:
       return DeviceCapabilities(
         model=f"Linux Box ({gpu_name})",
         chip=gpu_name,
-        memory=gpu_memory_info // 2**20,
-        flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
+        memory=gpus_memory_info // 2**20,
+        flops=gpus_flops,
       )
     else:
       handle = torch.cuda.current_device()
