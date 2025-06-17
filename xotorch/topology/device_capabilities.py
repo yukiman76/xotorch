@@ -207,12 +207,12 @@ async def linux_device_capabilities() -> DeviceCapabilities:
       gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
       gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
     
-    if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info.total // 2**30} GB]")
+    if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info // 2**30} GB]")
 
     return DeviceCapabilities(
       model=f"Linux Box ({gpu_name})",
       chip=gpu_name,
-      memory=gpu_memory_info.total // 2**20,
+      memory=gpu_memory_info // 2**20,
       flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
     )
   else:

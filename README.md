@@ -20,6 +20,7 @@ Please see the [project task board](https://github.com/orgs/shamantechnology/pro
 ## Running and Installation
 **You must install [pytorch](https://pytorch.org/) and [torchtune](https://docs.pytorch.org/torchtune/main/install.html) for your enviornment before using.**
 
+
 We are working on adding a better way to do this through setup.py
 
 If you are not on windows, run the **install.sh** in your terminal
@@ -32,6 +33,17 @@ If you are on Windows, run the **install.ps1** in PowerShell - PowerShell 7.5+ s
 
 ```
 PS C:\> .\install.ps1
+```
+
+After install script, run pytorch install [for your environment](https://pytorch.org/get-started/locally/). Along with torchtune and [torchao](https://github.com/pytorch/ao).
+
+**FOR NVIDIA JETSON INSTALL SEE [THIS ARTICLE](https://docs.nvidia.com/deeplearning/frameworks/install-pytorch-jetson-platform/index.html) FOR PYTORCH INSTALL**
+
+
+```
+$ pip install torch torchvision torchaudio
+$ pip install torchtune
+$ pip install torchao
 ```
 
 After install, use the **xot** command
