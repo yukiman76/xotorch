@@ -132,8 +132,12 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         print(f"tokens: {tokens}")
 
       # Reset state
-      self.state = ShardInferenceState(device=self.device)  # ← FULL reset
+      self.state = ShardInferenceState(device=self.device)
       self.state.curr_pos = 0
+
+      # Reset cache
+      if self.sharded_model.model.caches_are_enabled():
+        self.sharded_model.model.reset_caches()
 
       # if going past max, just take from max onward
       if len(tokens) > self.sharded_model.max_generated_tokens:
