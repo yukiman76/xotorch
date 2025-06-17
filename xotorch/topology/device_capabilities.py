@@ -188,18 +188,34 @@ async def linux_device_capabilities() -> DeviceCapabilities:
     num_gpus = torch.cuda.device_count()
     if num_gpus > 1:
       gpu_name = f"{num_gpus} GPUs"
-      gpu_vendor = []
-      gpu_memory_info = 0
+      gpu_names = []
+      gpus_flops = DeviceFlops(fp32=0, fp16=0, int8=0)
+      gpus_memory_info = 0
 
       for handle in range(num_gpus):
         gpu_raw_name = torch.cuda.get_device_name(handle).upper()
+        gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
+        gpu_names.append(gpu_name)
 
-        gpu_vendor_raw = "NVIDIA" if "NVIDIA" in gpu_raw_name.upper() else "AMD"
-        if gpu_vendor_raw not in gpu_vendor:
-          gpu_vendor.append(gpu_vendor_raw)
+        gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
+        gpus_memory_info += gpu_memory_info
 
-        gpu_memory_info += torch.cuda.get_device_properties(handle).total_memory
-      gpu_vendor = ' '
+        gpu_flops = CHIP_FLOPS.get(gpu_name)
+
+        if gpu_flops:
+          gpus_flops.fp32 += gpus_flops.fp32
+          gpus_flops.fp16 += gpu_flops.fp16
+          gpus_flops.int8 += gpu_flops.int8
+      
+      
+        if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info // 2**30} GB]")
+
+      return DeviceCapabilities(
+        model=f"Linux Box ({gpu_name})",
+        chip=gpu_name,
+        memory=gpu_memory_info // 2**20,
+        flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
+      )
     else:
       handle = torch.cuda.current_device()
       gpu_raw_name = torch.cuda.get_device_name(handle).upper()
@@ -207,14 +223,14 @@ async def linux_device_capabilities() -> DeviceCapabilities:
       gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
       gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
     
-    if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info // 2**30} GB]")
+      if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info // 2**30} GB]")
 
-    return DeviceCapabilities(
-      model=f"Linux Box ({gpu_name})",
-      chip=gpu_name,
-      memory=gpu_memory_info // 2**20,
-      flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
-    )
+      return DeviceCapabilities(
+        model=f"Linux Box ({gpu_name})",
+        chip=gpu_name,
+        memory=gpu_memory_info // 2**20,
+        flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
+      )
   else:
 
     return DeviceCapabilities(
