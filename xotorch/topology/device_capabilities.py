@@ -82,6 +82,7 @@ CHIP_FLOPS = {
   "NVIDIA GEFORCE RTX 3050": DeviceFlops(fp32=9.11*TFLOPS, fp16=18.22*TFLOPS, int8=36.44*TFLOPS),
   "NVIDIA GEFORCE RTX 3060": DeviceFlops(fp32=13.0*TFLOPS, fp16=26.0*TFLOPS, int8=52.0*TFLOPS),
   "NVIDIA GEFORCE RTX 3060 TI": DeviceFlops(fp32=16.2*TFLOPS, fp16=32.4*TFLOPS, int8=64.8*TFLOPS),
+  "NVIDIA GEFORCE RTX 3/60": DeviceFlops(fp32=13.0*TFLOPS, fp16=26.0*TFLOPS, int8=52.0*TFLOPS),
   "NVIDIA GEFORCE RTX 3070": DeviceFlops(fp32=20.3*TFLOPS, fp16=40.6*TFLOPS, int8=81.2*TFLOPS),
   "NVIDIA GEFORCE RTX 3070 TI": DeviceFlops(fp32=21.8*TFLOPS, fp16=43.6*TFLOPS, int8=87.2*TFLOPS),
   "NVIDIA GEFORCE RTX 3080 (10 GB)": DeviceFlops(fp32=29.8*TFLOPS, fp16=59.6*TFLOPS, int8=119.2*TFLOPS),
@@ -180,22 +181,33 @@ async def mac_device_capabilities() -> DeviceCapabilities:
 
 
 async def linux_device_capabilities() -> DeviceCapabilities:
-  import psutil
-  from tinygrad import Device
+  import torch
+  import platform
 
-  if DEBUG >= 2: print(f"tinygrad {Device.DEFAULT=}")
-  if Device.DEFAULT == "CUDA" or Device.DEFAULT == "NV" or Device.DEFAULT == "GPU":
-    import pynvml
+  if torch.cuda.is_available():
+    num_gpus = torch.cuda.device_count()
+    if num_gpus > 1:
+      gpu_name = f"{num_gpus} GPUs"
+      gpu_vendor = []
+      gpu_memory_info = 0
 
-    pynvml.nvmlInit()
-    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    gpu_raw_name = pynvml.nvmlDeviceGetName(handle).upper()
-    gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
-    gpu_memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+      for handle in range(num_gpus):
+        gpu_raw_name = torch.cuda.get_device_name(handle).upper()
 
-    if DEBUG >= 2: print(f"NVIDIA device {gpu_name=} {gpu_memory_info=}")
+        gpu_vendor_raw = "NVIDIA" if "NVIDIA" in gpu_raw_name.upper() else "AMD"
+        if gpu_vendor_raw not in gpu_vendor:
+          gpu_vendor.append(gpu_vendor_raw)
 
-    pynvml.nvmlShutdown()
+        gpu_memory_info += torch.cuda.get_device_properties(handle).total_memory
+      gpu_vendor = ' '
+    else:
+      handle = torch.cuda.current_device()
+      gpu_raw_name = torch.cuda.get_device_name(handle).upper()
+      gpu_vendor = "NVIDIA" if "NVIDIA" in gpu_raw_name.upper() else "AMD"
+      gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
+      gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
+    
+    if DEBUG >= 2: print(f"{gpu_vendor} GPU detected: {gpu_name} [{gpu_memory_info.total // 2**30} GB]")
 
     return DeviceCapabilities(
       model=f"Linux Box ({gpu_name})",
@@ -203,34 +215,17 @@ async def linux_device_capabilities() -> DeviceCapabilities:
       memory=gpu_memory_info.total // 2**20,
       flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
     )
-  elif Device.DEFAULT == "AMD":
-    import pyamdgpuinfo
-
-    gpu_raw_info = pyamdgpuinfo.get_gpu(0)
-    gpu_name = gpu_raw_info.name
-    gpu_memory_info = gpu_raw_info.memory_info["vram_size"]
-
-    if DEBUG >= 2: print(f"AMD device {gpu_name=} {gpu_memory_info=}")
-
-    return DeviceCapabilities(
-      model="Linux Box (" + gpu_name + ")",
-      chip=gpu_name,
-      memory=gpu_memory_info // 2**20,
-      flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
-    )
-
   else:
+
     return DeviceCapabilities(
-      model=f"Linux Box (Device: {Device.DEFAULT})",
-      chip=f"Unknown Chip (Device: {Device.DEFAULT})",
+      model=f"Linux Box",
+      chip=f"CPU ({platform.processor()})",
       memory=psutil.virtual_memory().total // 2**20,
       flops=DeviceFlops(fp32=0, fp16=0, int8=0),
     )
 
 
 async def windows_device_capabilities() -> DeviceCapabilities:
-  import psutil
-
   def get_gpu_info():
     import win32com.client  # install pywin32
 

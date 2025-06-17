@@ -26,6 +26,12 @@ Please see the [project task board](https://github.com/orgs/shamantechnology/pro
 
 ## Install and Run
 
+### Note on PyTorch install
+* You must install [pytorch](https://pytorch.org/) and [torchtune](https://docs.pytorch.org/torchtune/main/install.html) for your enviornment before using.*
+
+We are working on adding a better way to do this through setup.py
+
+### Running
 If you are not on windows, run the **install.sh** in your terminal
 
 ```

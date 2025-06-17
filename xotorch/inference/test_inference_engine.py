@@ -1,4 +1,4 @@
-from xotorch.inference.mlx.sharded_inference_engine import MLXDynamicShardInferenceEngine
+from xotorch.inference.torch.sharded_inference_engine import TorchDynamicShardInferenceEngine
 from xotorch.inference.inference_engine import InferenceEngine
 from xotorch.download.new_shard_download import NewShardDownloader
 from xotorch.inference.shard import Shard
@@ -44,11 +44,4 @@ async def test_inference_engine(inference_engine_1: InferenceEngine, inference_e
   assert np.array_equal(next_resp_full, resp4)
 
 
-asyncio.run(test_inference_engine(MLXDynamicShardInferenceEngine(NewShardDownloader()), MLXDynamicShardInferenceEngine(NewShardDownloader()), "llama-3.2-1b", 16))
-
-if os.getenv("RUN_TINYGRAD", default="0") == "1":
-  import tinygrad
-  import os
-  from xotorch.inference.tinygrad.inference import TinygradDynamicShardInferenceEngine
-  tinygrad.helpers.DEBUG.value = int(os.getenv("TINYGRAD_DEBUG", default="0"))
-  asyncio.run(test_inference_engine(TinygradDynamicShardInferenceEngine(NewShardDownloader()), TinygradDynamicShardInferenceEngine(NewShardDownloader()), "llama-3.2-1b", 32))
+asyncio.run(test_inference_engine(TorchDynamicShardInferenceEngine(NewShardDownloader()), TorchDynamicShardInferenceEngine(NewShardDownloader()), "llama-3.2-1b", 16))
