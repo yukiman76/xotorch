@@ -152,10 +152,20 @@ async def _download_file(repo_id: str, revision: str, path: str, target_dir: Pat
     n_read = resume_byte_pos or 0
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=1800, connect=60, sock_read=1800, sock_connect=60)) as session:
       async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=1800, connect=60, sock_read=1800, sock_connect=60)) as r:
-        if r.status == 404: raise FileNotFoundError(f"File not found: {url}")
-        assert r.status in [200, 206], f"Failed to download {path} from {url}: {r.status}"
-        async with aiofiles.open(partial_path, 'ab' if resume_byte_pos else 'wb') as f:
-          while chunk := await r.content.read(8 * 1024 * 1024): on_progress(n_read := n_read + await f.write(chunk), length)
+        skip_file = False
+        if r.status == 404 and "model.safetensors.index.json" not in path:
+          raise FileNotFoundError(f"File not found: {url}")
+        else:
+          skip_file = True
+
+        if "model.safetensors.index.json" not in path:
+          assert r.status in [200, 206], f"Failed to download {path} from {url}: {r.status}"
+        elif r.status not in [200, 206]:
+          skip_file = True
+        
+        if not skip_file:
+          async with aiofiles.open(partial_path, 'ab' if resume_byte_pos else 'wb') as f:
+            while chunk := await r.content.read(8 * 1024 * 1024): on_progress(n_read := n_read + await f.write(chunk), length)
 
   final_hash = await calc_hash(partial_path, type="sha256" if len(remote_hash) == 64 else "sha1")
   integrity = final_hash == remote_hash
@@ -179,9 +189,13 @@ def calculate_repo_progress(shard: Shard, repo_id: str, revision: str, file_prog
 
 async def get_weight_map(repo_id: str, revision: str = "main") -> Dict[str, str]:
   target_dir = (await ensure_xot_tmp())/repo_id.replace("/", "--")
-  index_file = await download_file_with_retry(repo_id, revision, "model.safetensors.index.json", target_dir)
-  async with aiofiles.open(index_file, 'r') as f: index_data = json.loads(await f.read())
-  return index_data.get("weight_map")
+
+  try:
+    index_file = await download_file_with_retry(repo_id, revision, "model.safetensors.index.json", target_dir)
+    async with aiofiles.open(index_file, 'r') as f: index_data = json.loads(await f.read())
+    return index_data.get("weight_map")
+  except Exception as err:
+    
 
 async def resolve_allow_patterns(shard: Shard, inference_engine_classname: str) -> List[str]:
   try:
@@ -209,7 +223,7 @@ async def download_shard(shard: Shard, inference_engine_classname: str, on_progr
     raise ValueError(f"No repo found for {shard.model_id=} and inference engine {inference_engine_classname}")
 
   allow_patterns = await resolve_allow_patterns(shard, inference_engine_classname)
-  if DEBUG >= 2: print(f"Downloading {shard.model_id=} with {allow_patterns=}")
+  if DEBUG >= 10: print(f"Downloading {shard.model_id=} with {allow_patterns=}")
 
   all_start_time = time.time()
   file_list = await fetch_file_list_with_cache(repo_id, revision)
@@ -222,7 +236,7 @@ async def download_shard(shard: Shard, inference_engine_classname: str, on_progr
     eta = timedelta(seconds=(total_bytes - curr_bytes) / speed) if speed > 0 else timedelta(seconds=0)
     file_progress[file["path"]] = RepoFileProgressEvent(repo_id, revision, file["path"], curr_bytes, downloaded_this_session, total_bytes, speed, eta, "complete" if curr_bytes == total_bytes else "in_progress", start_time)
     on_progress.trigger_all(shard, calculate_repo_progress(shard, repo_id, revision, file_progress, all_start_time))
-    if DEBUG >= 6: print(f"Downloading {file['path']} {curr_bytes}/{total_bytes} {speed} {eta}")
+    if DEBUG >= 10: print(f"Downloading {file['path']} {curr_bytes}/{total_bytes} {speed} {eta}")
   for file in filtered_file_list:
     downloaded_bytes = await get_downloaded_size(target_dir/file["path"])
     file_progress[file["path"]] = RepoFileProgressEvent(repo_id, revision, file["path"], downloaded_bytes, 0, file["size"], 0, timedelta(0), "complete" if downloaded_bytes == file["size"] else "not_started", time.time())
