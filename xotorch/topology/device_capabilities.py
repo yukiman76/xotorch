@@ -210,7 +210,7 @@ async def linux_device_capabilities() -> DeviceCapabilities:
         if DEBUG >= 2: print(f"GPU detected: {gpu_name} [{gpu_memory_info // 2**30} GB]")
 
       return DeviceCapabilities(
-        model=f"Linux Box",
+        model=f"Linux Box ({num_gpus} GPUs)",
         chip=f"{num_gpus} GPUs",
         memory=gpus_memory_info // 2**20,
         flops=gpus_flops,
