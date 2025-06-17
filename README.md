@@ -17,12 +17,11 @@ Distributed inference and training with a focus on PyTorch
 ## Development
 Please see the [project task board](https://github.com/orgs/shamantechnology/projects/3) for active tickets.
 
-## Note on PyTorch install
+## Running and Installation
 **You must install [pytorch](https://pytorch.org/) and [torchtune](https://docs.pytorch.org/torchtune/main/install.html) for your enviornment before using.**
 
 We are working on adding a better way to do this through setup.py
 
-## Running and Installation
 If you are not on windows, run the **install.sh** in your terminal
 
 ```
