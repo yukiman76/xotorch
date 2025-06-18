@@ -272,7 +272,7 @@ def get_cuda_devices(device_platform="Linux") -> DeviceCapabilities:
         memory_mb = gpu_memory_info.total // 1000 // 1000  # Convert to MB
         logging.debug(f"Jetson memory info: {memory_mb} MB")
       else:
-        memory_mb = gpu_memory_info.total // 2**20
+        memory_mb = gpu_memory_info // 2**20
 
       # Always log device info for debugging
       logging.debug(f"NVIDIA device {gpu_name=} {memory_mb=}")
