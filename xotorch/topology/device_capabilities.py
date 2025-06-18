@@ -3,15 +3,17 @@ from pydantic import BaseModel
 import psutil
 import torch
 import platform
-import win32com.client  # install pywin32
+
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from xotorch import DEBUG
 from xotorch.helpers import get_mac_system_info, subprocess_pool
 
+log_file_path = Path(str(Path.cwd().parent.parent) + f"/logs/run_{datetime.now().strftime('%Y_%m_%d')}.log") # TEMP WILL FIX
 logging.basicConfig(
-    filename=f"run_{datetime.now().strftime('%Y_%m_%d')}.log",
+    filename=log_file_path,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     filemode="a"
@@ -363,6 +365,8 @@ async def linux_device_capabilities() -> DeviceCapabilities:
   )
 
 async def windows_device_capabilities() -> DeviceCapabilities:
+  import win32com.client  # install pywin32
+  
   if torch.cuda.is_available():
     return get_cuda_devices(device_platform="Windows")
   
