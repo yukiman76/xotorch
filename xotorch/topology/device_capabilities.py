@@ -1,23 +1,23 @@
 from typing import Any
 from pydantic import BaseModel
-from xotorch import DEBUG
-import subprocess
 import psutil
-import asyncio
 import torch
-import os
+import platform
+import win32com.client  # install pywin32
+import logging
+from datetime import datetime
+
+from xotorch import DEBUG
 from xotorch.helpers import get_mac_system_info, subprocess_pool
 
-# Create a debug log file
-DEBUG_LOG_FILE = os.path.expanduser("~/xotorch_debug.log")
-def debug_log(message):
-    """Write debug message to log file"""
-    with open(DEBUG_LOG_FILE, "a") as f:
-        f.write(f"{message}\n")
+logging.basicConfig(
+    filename=f"run_{datetime.now().strftime('%Y_%m_%d')}.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    filemode="a"
+)
 
 TFLOPS = 1.00
-
-
 class DeviceFlops(BaseModel):
   # units of TFLOPS
   fp32: float
@@ -131,8 +131,8 @@ CHIP_FLOPS = {
   "NVIDIA A100 80GB SXM": DeviceFlops(fp32=19.5*TFLOPS, fp16=312.0*TFLOPS, int8=624.0*TFLOPS),
   "NVIDIA A800 80GB SXM": DeviceFlops(fp32=19.5*TFLOPS, fp16=312.0*TFLOPS, int8=624.0*TFLOPS),
   "NVIDIA T1000 8GB": DeviceFlops(fp32=2.5 * TFLOPS, fp16=5.0 * TFLOPS, int8=10.0 * TFLOPS),
-  "Quadro M2000": DeviceFlops(fp32=0.5 * TFLOPS, fp16=1.0 * TFLOPS, int8=2.0 * TFLOPS),
-  "Quadro P400": DeviceFlops(fp32=0.641 * TFLOPS, fp16=1.282 * TFLOPS, int8=2.564 * TFLOPS),
+  "QUADRO M2000": DeviceFlops(fp32=0.5 * TFLOPS, fp16=1.0 * TFLOPS, int8=2.0 * TFLOPS),
+  "QUADRO P400": DeviceFlops(fp32=0.641 * TFLOPS, fp16=1.282 * TFLOPS, int8=2.564 * TFLOPS),
   "NVIDIA A10": DeviceFlops(fp32=31.2 * TFLOPS, fp16=62.5 * TFLOPS, int8=2.5 * TFLOPS),
   # ... add more devices if needed ...
   ### AMD GPUs
@@ -177,116 +177,6 @@ async def device_capabilities() -> DeviceCapabilities:
       flops=DeviceFlops(fp32=0, fp16=0, int8=0),
     )
 
-
-async def mac_device_capabilities() -> DeviceCapabilities:
-  model_id, chip_id, memory = await get_mac_system_info()
-  
-  return DeviceCapabilities(
-    model=model_id,
-    chip=chip_id,
-    memory=memory,
-    flops=CHIP_FLOPS.get(chip_id, DeviceFlops(fp32=0, fp16=0, int8=0))
-  )
-
-
-async def linux_device_capabilities() -> DeviceCapabilities:
-  import psutil
-  
-  # Check for CUDA using torch
-  is_cuda = torch.cuda.is_available()
-  if DEBUG >= 2: print(f"torch.cuda.is_available(): {is_cuda}")
-  
-  if is_cuda:
-    import pynvml
-
-    pynvml.nvmlInit()
-    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    gpu_raw_name = pynvml.nvmlDeviceGetName(handle).upper()
-    
-    # For Jetson AGX Orin 32GB, override the GPU name
-    if "ORIN" in gpu_raw_name:
-      gpu_name = "JETSON AGX ORIN 32GB"
-      if DEBUG >= 1: print(f"Detected Jetson device: {gpu_raw_name} -> {gpu_name}")
-    else:
-      gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
-    
-    # Log all keys in CHIP_FLOPS for debugging
-    debug_log(f"Available CHIP_FLOPS keys: {list(CHIP_FLOPS.keys())}")
-    
-    # Special handling for Jetson devices
-    if gpu_raw_name == 'ORIN (NVGPU)' or "ORIN" in gpu_raw_name:
-      debug_log(f"Detected Jetson device: {gpu_raw_name}")
-      gpu_memory_info = get_jetson_device_meminfo()
-      memory_mb = gpu_memory_info.total // 1000 // 1000  # Convert to MB
-      debug_log(f"Jetson memory info: {memory_mb} MB")
-    else:
-      try:
-        gpu_memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
-        memory_mb = gpu_memory_info.total // 2**20
-      except pynvml.NVMLError_NotSupported:
-        debug_log("[Warning] pynvml: GPU memory info not supported on this device.")
-        memory_mb = psutil.virtual_memory().total // 2**20
-
-    # Always log device info for debugging
-    debug_log(f"NVIDIA device {gpu_name=} {memory_mb=}")
-    
-    # Get FLOPS values and log for debugging
-    flops = CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0))
-    debug_log(f"FLOPS for {gpu_name}: {flops}")
-    
-    # Check if the key exists in CHIP_FLOPS
-    if gpu_name in CHIP_FLOPS:
-      debug_log(f"Found {gpu_name} in CHIP_FLOPS")
-    else:
-      debug_log(f"WARNING: {gpu_name} not found in CHIP_FLOPS")
-      # Try to find similar keys
-      similar_keys = [k for k in CHIP_FLOPS.keys() if "ORIN" in k or "JETSON" in k]
-      debug_log(f"Similar keys in CHIP_FLOPS: {similar_keys}")
-      
-      # Try a direct assignment for Jetson
-      if "ORIN" in gpu_raw_name:
-        debug_log("Forcing JETSON AGX ORIN 32GB FLOPS values")
-        flops = CHIP_FLOPS["JETSON AGX ORIN 32GB"]
-
-    pynvml.nvmlShutdown()
-
-    # Log the final values being returned
-    debug_log(f"Returning DeviceCapabilities with model={gpu_name}, memory={memory_mb}, flops={flops}")
-    
-    return DeviceCapabilities(
-      model=f"Linux Box ({gpu_name})",
-      chip=gpu_name,
-      memory=memory_mb,
-      flops=flops,
-    )
-  # Check for AMD GPUs
-  try:
-    import pyamdgpuinfo
-    has_amd = True
-    
-    gpu_raw_info = pyamdgpuinfo.get_gpu(0)
-    gpu_name = gpu_raw_info.name
-    gpu_memory_info = gpu_raw_info.memory_info["vram_size"]
-
-    if DEBUG >= 2: print(f"AMD device {gpu_name=} {gpu_memory_info=}")
-
-    return DeviceCapabilities(
-      model="Linux Box (" + gpu_name + ")",
-      chip=gpu_name,
-      memory=gpu_memory_info // 2**20,
-      flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
-    )
-  except (ImportError, Exception) as e:
-    if DEBUG >= 2: print(f"AMD GPU detection failed: {e}")
-    
-  # Fallback for CPU or unknown device
-  return DeviceCapabilities(
-    model=f"Linux Box (CPU or Unknown Device)",
-    chip=f"Unknown Chip",
-    memory=psutil.virtual_memory().total // 2**20,
-    flops=DeviceFlops(fp32=0, fp16=0, int8=0),
-  )
-
 def get_jetson_device_meminfo():
   """Get memory information for Jetson devices."""
   from re import search
@@ -312,73 +202,183 @@ def get_jetson_device_meminfo():
     used=used_memory * 1000
   )
 
+def get_cuda_devices(device_platform="Linux") -> DeviceCapabilities:
+  """
+  Uses torch cuda to get available information about device. Also works with ROCm for AMD device detection and info
+  """
+  if torch.cuda.is_available():
+    num_gpus = torch.cuda.device_count()
+    multi_gpu_name = None
+
+    if num_gpus > 1:
+      multi_gpu_flops = DeviceFlops(fp32=0, fp16=0, int8=0)
+      multi_gpu_memory_info = 0
+      multi_gpu_name = f"{num_gpus} GPUs"
+
+      for handle in range(num_gpus):
+        gpu_raw_name = torch.cuda.get_device_name(handle).upper()
+
+        if "ORIN" in gpu_raw_name:
+          gpu_name = "JETSON AGX ORIN 32GB"
+        else:
+          gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
+
+        if gpu_raw_name == 'ORIN (NVGPU)' or "ORIN" in gpu_raw_name and device_platform != "Windows":
+          gpu_memory_info = get_jetson_device_meminfo()
+        else:  
+          gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
+        
+        multi_gpu_memory_info += gpu_memory_info
+
+        if gpu_name in CHIP_FLOPS:
+          gpu_flops = CHIP_FLOPS.get(gpu_name)
+        elif "ORIN" in gpu_raw_name:
+          gpu_flops = CHIP_FLOPS.get("JETSON AGX ORIN 32GB")
+
+        logging.debug(f"[{gpu_name}] : {gpu_flops=}")
+
+        if gpu_flops:
+          multi_gpu_flops.fp32 += gpu_flops.fp32
+          multi_gpu_flops.fp16 += gpu_flops.fp16
+          multi_gpu_flops.int8 += gpu_flops.int8
+        
+      return DeviceCapabilities(
+        model=f"{device_platform} ({multi_gpu_name})",
+        chip=multi_gpu_name,
+        memory=multi_gpu_memory_info // 2**20,
+        flops=multi_gpu_flops,
+      )
+
+    if multi_gpu_name is None:
+      handle = torch.cuda.current_device()
+      gpu_raw_name = torch.cuda.get_device_name(handle).upper()
+      gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
+      gpu_memory_info = torch.cuda.get_device_properties(handle).total_memory
+      
+      # For Jetson AGX Orin 32GB, override the GPU name
+      if "ORIN" in gpu_raw_name:
+        gpu_name = "JETSON AGX ORIN 32GB"
+        if DEBUG >= 1: print(f"Detected Jetson device: {gpu_raw_name} -> {gpu_name}")
+      else:
+        gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
+      
+      # Log all keys in CHIP_FLOPS for debugging
+      logging.debug(f"Available CHIP_FLOPS keys: {list(CHIP_FLOPS.keys())}")
+      
+      # Special handling for Jetson devices
+      if gpu_raw_name == 'ORIN (NVGPU)' or "ORIN" in gpu_raw_name and device_platform != "Windows":
+        logging.debug(f"Detected Jetson device: {gpu_raw_name}")
+        gpu_memory_info = get_jetson_device_meminfo()
+        memory_mb = gpu_memory_info.total // 1000 // 1000  # Convert to MB
+        logging.debug(f"Jetson memory info: {memory_mb} MB")
+      else:
+        memory_mb = gpu_memory_info // 2**20
+
+      # Always log device info for debugging
+      logging.debug(f"NVIDIA device {gpu_name=} {memory_mb=}")
+      
+      # Get FLOPS values and log for debugging
+      flops = CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0))
+      logging.debug(f"FLOPS for {gpu_name}: {flops}")
+      
+      # Check if the key exists in CHIP_FLOPS
+      if gpu_name in CHIP_FLOPS:
+        logging.debug(f"Found {gpu_name} in CHIP_FLOPS")
+      else:
+        logging.debug(f"WARNING: {gpu_name} not found in CHIP_FLOPS")
+        # Try to find similar keys
+        similar_keys = [k for k in CHIP_FLOPS.keys() if "ORIN" in k or "JETSON" in k]
+        logging.debug(f"Similar keys in CHIP_FLOPS: {similar_keys}")
+        
+        # Try a direct assignment for Jetson
+        if "ORIN" in gpu_raw_name:
+          logging.debug("Forcing JETSON AGX ORIN 32GB FLOPS values")
+          flops = CHIP_FLOPS.get("JETSON AGX ORIN 32GB")
+
+      # Log the final values being returned
+      logging.debug(f"Returning DeviceCapabilities with model={gpu_name}, memory={memory_mb}, flops={flops}")
+    
+      return DeviceCapabilities(
+        model=f"{device_platform} ({gpu_name})",
+        chip=gpu_name,
+        memory=memory_mb,
+        flops=flops,
+      )
+
+  # Fallback for CPU
+  return DeviceCapabilities(
+    model=f"{device_platform}",
+    chip=f"CPU ({platform.processor()})",
+    memory=psutil.virtual_memory().total // 2**20,
+    flops=DeviceFlops(fp32=0, fp16=0, int8=0),
+  )
+
+def get_amd_devices(device_platform="Linux") -> DeviceCapabilities:
+  """
+  Detection of AMD GPU info using pyamdgpuinfo if installed
+  """
+  import pyamdgpuinfo
+  has_amd = True
+  
+  gpu_raw_info = pyamdgpuinfo.get_gpu(0)
+  gpu_name = gpu_raw_info.name
+  gpu_memory_info = gpu_raw_info.memory_info["vram_size"]
+
+  if DEBUG >= 2: logging.debug(f"AMD device {gpu_name=} {gpu_memory_info=}")
+
+  return DeviceCapabilities(
+    model=f"{device_platform} ({gpu_name})",
+    chip=gpu_name,
+    memory=gpu_memory_info // 2**20,
+    flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
+  )
+
+async def mac_device_capabilities() -> DeviceCapabilities:
+  model_id, chip_id, memory = await get_mac_system_info()
+  
+  return DeviceCapabilities(
+    model=model_id,
+    chip=chip_id,
+    memory=memory,
+    flops=CHIP_FLOPS.get(chip_id, DeviceFlops(fp32=0, fp16=0, int8=0))
+  )
+
+async def linux_device_capabilities() -> DeviceCapabilities:
+  if torch.cuda.is_available():
+    return get_cuda_devices()
+  
+  # try AMD
+  try:
+    return get_amd_devices()
+  except (ImportError, Exception) as e:
+    if DEBUG >= 2: logging.debug(f"AMD GPU detection failed:\n{e}")
+
+    
+  # Fallback for CPU
+  return DeviceCapabilities(
+    model=f"Linux",
+    chip=f"CPU ({platform.processor()})",
+    memory=psutil.virtual_memory().total // 2**20,
+    flops=DeviceFlops(fp32=0, fp16=0, int8=0),
+  )
 
 async def windows_device_capabilities() -> DeviceCapabilities:
-  import psutil
+  if torch.cuda.is_available():
+    return get_cuda_devices(device_platform="Windows")
+  
+  # try AMD
+  try:
+    return get_amd_devices(device_platform="Windows")
+  except (ImportError, Exception) as e:
+    if DEBUG >= 2: logging.debug(f"AMD GPU detection failed:\n{e}")
+  
+  return DeviceCapabilities(
+    model=f"Windows",
+    chip=f"CPU ({platform.processor()})",
+    memory=psutil.virtual_memory().total // 2**20,
+    flops=DeviceFlops(fp32=0, fp16=0, int8=0),
+  )
 
-  def get_gpu_info():
-    import win32com.client  # install pywin32
 
-    wmiObj = win32com.client.GetObject("winmgmts:\\\\.\\root\\cimv2")
-    gpus = wmiObj.ExecQuery("SELECT * FROM Win32_VideoController")
 
-    gpu_info = []
-    for gpu in gpus:
-      info = {
-        "Name": gpu.Name,
-        "AdapterRAM": gpu.AdapterRAM,  # Bug in this property, returns -ve for VRAM > 4GB (uint32 overflow)
-        "DriverVersion": gpu.DriverVersion,
-        "VideoProcessor": gpu.VideoProcessor
-      }
-      gpu_info.append(info)
 
-    return gpu_info
-
-  gpus_info = get_gpu_info()
-  gpu_names = [gpu['Name'] for gpu in gpus_info]
-
-  contains_nvidia = any('nvidia' in gpu_name.lower() for gpu_name in gpu_names)
-  contains_amd = any('amd' in gpu_name.lower() for gpu_name in gpu_names)
-
-  if contains_nvidia:
-    import pynvml
-
-    pynvml.nvmlInit()
-    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    gpu_raw_name = pynvml.nvmlDeviceGetName(handle).upper()
-    gpu_name = gpu_raw_name.rsplit(" ", 1)[0] if gpu_raw_name.endswith("GB") else gpu_raw_name
-    gpu_memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
-
-    if DEBUG >= 2: print(f"NVIDIA device {gpu_name=} {gpu_memory_info=}")
-
-    return DeviceCapabilities(
-      model=f"Windows Box ({gpu_name})",
-      chip=gpu_name,
-      memory=gpu_memory_info.total // 2**20,
-      flops=CHIP_FLOPS.get(gpu_name, DeviceFlops(fp32=0, fp16=0, int8=0)),
-    )
-  elif contains_amd:
-    # For AMD GPUs, pyrsmi is the way (Official python package for rocm-smi)
-    from pyrsmi import rocml
-
-    rocml.smi_initialize()
-    gpu_name = rocml.smi_get_device_name(0).upper()
-    gpu_memory_info = rocml.smi_get_device_memory_total(0)
-
-    if DEBUG >= 2: print(f"AMD device {gpu_name=} {gpu_memory_info=}")
-
-    rocml.smi_shutdown()
-
-    return DeviceCapabilities(
-      model="Windows Box ({gpu_name})",
-      chip={gpu_name},
-      memory=gpu_memory_info.total // 2**20,
-      flops=DeviceFlops(fp32=0, fp16=0, int8=0),
-    )
-  else:
-    return DeviceCapabilities(
-      model=f"Windows Box (Device: Unknown)",
-      chip=f"Unknown Chip (Device(s): {gpu_names})",
-      memory=psutil.virtual_memory().total // 2**20,
-      flops=DeviceFlops(fp32=0, fp16=0, int8=0),
-    )
