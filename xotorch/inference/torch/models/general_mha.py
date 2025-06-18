@@ -235,13 +235,22 @@ class ShardedGeneralModel(nn.Module):
       print(f"input_pos: {input_pos}")
 
     with torch.no_grad():
-      model_output = self.model(
-        tokens=tokens,
-        mask=mask,
-        input_pos=input_pos,
-        hidden_state=hidden_state,
-        dtype=self.dtype
-      )
+      if torch.cuda.device_count() > 1:
+        model_output = nn.DataParallel(self.model(
+          tokens=tokens,
+          mask=mask,
+          input_pos=input_pos,
+          hidden_state=hidden_state,
+          dtype=self.dtype
+        ))
+      else:
+        model_output = self.model(
+          tokens=tokens,
+          mask=mask,
+          input_pos=input_pos,
+          hidden_state=hidden_state,
+          dtype=self.dtype
+        )
 
     if self.shard.is_last_layer():
       model_logits = model_output
