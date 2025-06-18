@@ -11,9 +11,8 @@ from pathlib import Path
 from xotorch import DEBUG
 from xotorch.helpers import get_mac_system_info, subprocess_pool
 
-log_file_path = Path(str(Path.cwd().parent.parent) + f"/logs/run_{datetime.now().strftime('%Y_%m_%d')}.log") # TEMP WILL FIX
 logging.basicConfig(
-    filename=log_file_path,
+    filename=f"logs/run_{datetime.now().strftime('%Y_%m_%d')}.log", # move to log folder
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     filemode="a"

@@ -178,3 +178,5 @@ cython_debug/
 xotorch/tinychat/images/*.png
 .vscode/
 build/
+
+logs/
