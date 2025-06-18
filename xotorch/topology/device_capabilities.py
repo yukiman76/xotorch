@@ -11,7 +11,7 @@ from xotorch import DEBUG
 from xotorch.helpers import get_mac_system_info, subprocess_pool
 
 logging.basicConfig(
-    filename=f"run_{datetime.now().strftime("%Y_%m_%d")}.log",
+    filename=f"run_{datetime.now().strftime('%Y_%m_%d')}.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     filemode="a"
