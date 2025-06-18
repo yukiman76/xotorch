@@ -10,9 +10,9 @@ from pathlib import Path
 
 from xotorch import DEBUG
 from xotorch.helpers import get_mac_system_info, subprocess_pool
-
+# 
 logging.basicConfig(
-    filename=f"logs/run_{datetime.now().strftime('%Y_%m_%d')}.log", # move to log folder
+    filename=f"run_{datetime.now().strftime('%Y_%m_%d')}.log", # move to log folder
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     filemode="a"
@@ -231,6 +231,7 @@ def get_cuda_devices(device_platform="Linux") -> DeviceCapabilities:
         
         multi_gpu_memory_info += gpu_memory_info
 
+        gpu_flops = None
         if gpu_name in CHIP_FLOPS:
           gpu_flops = CHIP_FLOPS.get(gpu_name)
         elif "ORIN" in gpu_raw_name:
