@@ -459,13 +459,12 @@ async def main():
             nonlocal tokens_per_second, last_token_count
             tokens = []
             full_response = ""
-            last_stats_update = 0
             
             # Print initial response header
-            print("\n╭─ Response ───────────────────────────────────────────────────────╮")
+            print("\n=== AI RESPONSE ===\n")
             
             def on_token(_request_id, _tokens, _is_finished):
-              nonlocal tokens_per_second, last_token_count, start_time, full_response, last_stats_update
+              nonlocal tokens_per_second, last_token_count, start_time, full_response
               tokens.extend(_tokens)
               
               # Calculate tokens per second
@@ -480,14 +479,14 @@ async def main():
                   tokenizer = node.inference_engine.tokenizer
                   new_text = tokenizer.decode(_tokens)
                   full_response += new_text
+                  
+                  # Print the new text without creating a new line
                   print(new_text, end="", flush=True)
                   
-                  # Update stats occasionally at the bottom
-                  if current_time - last_stats_update >= 1.0:  # Update every second
-                    last_stats_update = current_time
+                  # Update the stats line occasionally
+                  if len(tokens) % 5 == 0:  # Update every 5 tokens
                     tflops = node.topology.nodes.get(node.id, UNKNOWN_DEVICE_CAPABILITIES).flops.fp16
-                    print(f"\n\n[Stats] Tokens: {len(tokens)} | Speed: {tokens_per_second:.2f} tokens/sec | TFLOPS: {tflops:.2f}")
-                    print("\n", end="", flush=True)  # Return to response
+                    print(f"\n[Stats: {len(tokens)} tokens | {tokens_per_second:.2f} t/s | {tflops:.2f} TFLOPS]\n", end="", flush=True)
               except Exception as e:
                 if DEBUG >= 2:
                   print(f"\nError decoding tokens: {e}")
@@ -499,7 +498,11 @@ async def main():
               
               # Show completion
               print("\n\n✓ Generation complete")
-              print("╰───────────────────────────────────────────────────────────────╯\n")
+              print("===================\n")
+              
+              # Display final stats
+              tflops = node.topology.nodes.get(node.id, UNKNOWN_DEVICE_CAPABILITIES).flops.fp16
+              print(f"Final stats: {len(tokens)} tokens | {tokens_per_second:.2f} tokens/sec | {tflops:.2f} TFLOPS\n")
               
               # Display the full response for clarity
               print("\n--- FULL RESPONSE ---")
