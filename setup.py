@@ -37,6 +37,8 @@ extras_require = {
   "nvidia-gpu": ["nvidia-ml-py==12.560.30",],
   "amd-gpu": ["pyrsmi==0.2.0"],
   "non-windows": ["uvloop==0.21.0"],
+  "torch-extras": ["torchtune>=0.6.1", "torchao>=0.11.0"],
+  "jetson": ["torchtune>=0.6.1", "torchao>=0.11.0"],
 }
 
 use_win = False
@@ -57,6 +59,29 @@ def _add_gpu_requires():
     out = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'], shell=True, text=True, capture_output=True, check=False)
     if out.returncode == 0:
       install_requires.extend(extras_require["nvidia-gpu"])
+      
+      # Check if running on Jetson platform
+      is_jetson = False
+      try:
+        # Check for Jetson-specific file
+        import os
+        if os.path.exists('/etc/nv_tegra_release'):
+          is_jetson = True
+        # Alternative check for Jetson hardware
+        elif out.stdout and any(jetson_keyword in out.stdout.lower() for jetson_keyword in ['tegra', 'jetson']):
+          is_jetson = True
+          
+        if is_jetson:
+          print("Detected Jetson platform, adding Jetson-specific dependencies")
+          install_requires.extend(extras_require["jetson"])
+        else:
+          # For non-Jetson NVIDIA platforms, add torch extras if needed
+          print("Detected non-Jetson NVIDIA platform, adding torch extras")
+          install_requires.extend(extras_require["torch-extras"])
+      except Exception as e:
+        print(f"Error detecting Jetson platform: {e}")
+        # Add torch extras by default for NVIDIA platforms
+        install_requires.extend(extras_require["torch-extras"])
   except subprocess.CalledProcessError:
     pass
 
