@@ -22,7 +22,8 @@ from xotorch.helpers import DEBUG
 
 def GeneralMHA(
     config: dict,
-    shard: Shard
+    shard: Shard,
+    quantize: bool = False
 ):
   use_tied = False
   attn_bias = config.get("attn_bias", False)
@@ -129,7 +130,7 @@ def GeneralMHA(
 
   norm = RMSNorm(config["embed_dim"], eps=config["norm_eps"])
 
-  return ShardTransformerDecoder(
+  shard_decoder = ShardTransformerDecoder(
     tok_embeddings=tok_embeddings,
     shard=shard,
     layers=layers,
@@ -141,6 +142,15 @@ def GeneralMHA(
     num_layers=config["num_layers"],
   )
 
+  if quantize:
+    return torch.quantization.quantize_dynamic(
+      shard_decoder,
+      {nn.Linear},
+      dtype=torch.qint8
+    )
+  else:
+    return shard_decoder
+
 class ShardedGeneralModel(nn.Module):
   def __init__(
     self,
@@ -150,6 +160,7 @@ class ShardedGeneralModel(nn.Module):
     dtype: torch.dtype = torch.float16,
     use_cache: Optional[bool] = False,
     max_generated_tokens: int = 1024,
+    quantize: bool = False
   ):
     super(ShardedGeneralModel, self).__init__()
 
@@ -162,7 +173,8 @@ class ShardedGeneralModel(nn.Module):
     
     self.model = GeneralMHA(
       config,
-      self.shard
+      self.shard,
+      quantize=quantize
     ).to(
       dtype=self.dtype,
       device=self.device

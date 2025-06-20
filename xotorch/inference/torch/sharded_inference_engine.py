@@ -412,7 +412,8 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         shard=shard,
         device=self.device,
         dtype=self.model_config["torch_dtype"],
-        use_cache=self.use_cache
+        use_cache=self.use_cache,
+        quantize=bool(os.getenv("XOT_QUANT", "False").lower() == "true")
       )
 
       load_model_weights_torchtune(

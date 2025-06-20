@@ -376,3 +376,14 @@ def get_uuid_images_dir() -> Path:
   images_dir = uuid_home/"Images"
   if not images_dir.exists(): images_dir.mkdir(exist_ok=True)
   return images_dir
+
+# Function to check if a port is available
+def is_port_available(port, host='0.0.0.0'):
+    """Check if a port is available on the specified host."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((host, port))
+            return True
+    except OSError:
+        return False
