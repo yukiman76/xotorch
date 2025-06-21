@@ -22,8 +22,7 @@ from xotorch.helpers import DEBUG
 
 def GeneralMHA(
     config: dict,
-    shard: Shard,
-    quantize: bool = False
+    shard: Shard
 ):
   use_tied = False
   attn_bias = config.get("attn_bias", False)
@@ -130,7 +129,7 @@ def GeneralMHA(
 
   norm = RMSNorm(config["embed_dim"], eps=config["norm_eps"])
 
-  shard_decoder = ShardTransformerDecoder(
+  return ShardTransformerDecoder(
     tok_embeddings=tok_embeddings,
     shard=shard,
     layers=layers,
@@ -142,25 +141,15 @@ def GeneralMHA(
     num_layers=config["num_layers"],
   )
 
-  if quantize:
-    return torch.quantization.quantize_dynamic(
-      shard_decoder,
-      {nn.Linear},
-      dtype=torch.qint8
-    )
-  else:
-    return shard_decoder
-
 class ShardedGeneralModel(nn.Module):
   def __init__(
     self,
     config: dict,
     shard: Shard,
     device: Optional[torch.device] = None,
-    dtype: torch.dtype = torch.float16,
+    dtype: torch.dtype = torch.bfloat16,
     use_cache: Optional[bool] = False,
-    max_generated_tokens: int = 1024,
-    quantize: bool = False
+    max_generated_tokens: int = 1024
   ):
     super(ShardedGeneralModel, self).__init__()
 
@@ -173,8 +162,7 @@ class ShardedGeneralModel(nn.Module):
     
     self.model = GeneralMHA(
       config,
-      self.shard,
-      quantize=quantize
+      self.shard
     ).to(
       dtype=self.dtype,
       device=self.device
@@ -220,22 +208,15 @@ class ShardedGeneralModel(nn.Module):
 
     self.model.output_hidden_states = [self.shard.end_layer]
 
-    if curr_pos > 0:
-      if self.model.caches_are_enabled():
-        input_pos = input_pos[:, curr_pos].contiguous()
-        mask = mask[:, curr_pos, None, :].contiguous()
-      else:
-        input_pos = input_pos[:, :curr_pos + 1]
-        mask = mask[:, :curr_pos + 1, :curr_pos + 1]
+    if curr_pos > 0 and self.model.caches_are_enabled():
+      tokens = tokens[:, curr_pos].contiguous()
+      input_pos = input_pos[:, curr_pos]
+      mask = mask[:, curr_pos, None, :]
     else:
       _, tklng = tokens.size()
-
-      if self.model.caches_are_enabled():
-        mask = mask[:, :tklng]
-      else:
-        mask = mask[:, :tklng, :tklng]
-
-      input_pos = input_pos[:, :tklng].squeeze()
+      tokens = tokens[:, :tklng]
+      input_pos = input_pos[:, :tklng]
+      mask = mask[:, :tklng] if self.model.caches_are_enabled() else mask[:, :tklng, :tklng]
 
     if DEBUG >= 4:
       print("model_input")
@@ -247,22 +228,13 @@ class ShardedGeneralModel(nn.Module):
       print(f"input_pos: {input_pos}")
 
     with torch.no_grad():
-      if torch.cuda.device_count() > 1:
-        model_output = nn.DataParallel(self.model(
-          tokens=tokens,
-          mask=mask,
-          input_pos=input_pos,
-          hidden_state=hidden_state,
-          dtype=self.dtype
-        ))
-      else:
-        model_output = self.model(
-          tokens=tokens,
-          mask=mask,
-          input_pos=input_pos,
-          hidden_state=hidden_state,
-          dtype=self.dtype
-        )
+      model_output = self.model(
+        tokens=tokens,
+        mask=mask,
+        input_pos=input_pos,
+        hidden_state=hidden_state,
+        dtype=self.dtype
+      )
 
     if self.shard.is_last_layer():
       model_logits = model_output

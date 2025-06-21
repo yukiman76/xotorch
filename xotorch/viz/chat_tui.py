@@ -27,14 +27,18 @@ async def run_chat_tui(args, api, node):
   # Set Llama 1B as the default model
   default_model = args.default_model or "llama-3.2-1b"
   
-  print("\n╔════════════════════════════════════════════════════════════╗")
-  print("║             XOTORCH TERMINAL INTERFACE                      ║")
-  print("╠════════════════════════════════════════════════════════════╣")
-  print(f"║ Model: {default_model.ljust(53)}║")
-  print("║ Type your prompt after the '>' prompt below                 ║")
-  print("║ Commands: 'exit' to quit, 'model <name>' to switch models   ║")
-  print("║ Supported models: llama-3.2-1b, llama-3.2-3b, llama-3-8b    ║")
-  print("╚════════════════════════════════════════════════════════════╝")
+  print("\n╔══════════════════════════════════════════════════════════════╗")
+  print("║             XOTORCH TERMINAL INTERFACE                       ║")
+  print("╠══════════════════════════════════════════════════════════════╣")
+  print("║ Type your prompt after the '>' prompt below                  ║")
+  print("║ Commands: 'exit' to quit, 'model <name>' to switch models    ║")
+  print("║ Supported models: llama-3.2-1b, llama-3.2-3b, llama-3-8b     ║")
+  print("╚══════════════════════════════════════════════════════════════╝")
+  print("")
+  print("═══════════════════════════")
+  print(f"Model: {default_model}")
+  print("═══════════════════════════")
+  
   
   current_model = default_model
   tokens_per_second = 0.0
@@ -76,9 +80,6 @@ async def run_chat_tui(args, api, node):
         nonlocal tokens_per_second, last_token_count
         tokens = []
         full_response = ""
-        
-        # Print initial response header
-        print("\n=== AI RESPONSE ===\n")
         
         def on_token(_request_id, _tokens, _is_finished):
           nonlocal tokens_per_second, last_token_count, start_time, full_response
@@ -127,7 +128,7 @@ async def run_chat_tui(args, api, node):
           print(f"Final stats: {len(tokens)} tokens | {tokens_per_second:.2f} tokens/sec | {tflops:.2f} TFLOPS\n")
           
           # Display the full response for clarity
-          print("\n--- FULL RESPONSE ---")
+          print("\n=== AI RESPONSE ===\n")
           print(full_response)
           print("--------------------\n")
         except Exception as e:
