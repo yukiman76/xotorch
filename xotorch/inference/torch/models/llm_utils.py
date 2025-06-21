@@ -60,8 +60,8 @@ def load_model_config(model_config_path: Path) -> dict:
       "attn_bias": base_config.get("attention_bias", False),
       "hidden_act": base_config.get("hidden_act", "silu"),
       "torch_dtype": HF_PRECISION_STR_TO_DTYPE.get(
-        base_config.get("torch_dtype", "float16"),
-        torch.float16
+        base_config.get("torch_dtype", "bfloat16"),
+        torch.bfloat16
       )
     }
 
@@ -371,7 +371,7 @@ class ShardTransformerDecoder(TransformerDecoder):
     mask: Optional[_MaskType] = None,
     input_pos: Optional[torch.Tensor] = None,
     hidden_state: Optional[torch.Tensor] = None,
-    dtype: torch.dtype = torch.float16
+    dtype: torch.dtype = torch.bfloat16
   ) -> Union[torch.Tensor, List[torch.Tensor]]:
     # Determine the type of input and shape
     if DEBUG >= 4:
@@ -426,7 +426,7 @@ class ShardTransformerDecoder(TransformerDecoder):
       h = self.norm(h)
 
       # Handle chunked output if needed
-      output = self.output(h).float()
+      output = self.output(h) #.float()
 
       if DEBUG >= 4:
         print(f"\n\noutput {output}\n\n")

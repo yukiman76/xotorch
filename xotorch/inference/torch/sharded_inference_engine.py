@@ -139,11 +139,6 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
       if self.sharded_model.model.caches_are_enabled():
         self.sharded_model.model.reset_caches()
 
-      # if going past max, just take from max onward
-      if len(tokens) > self.sharded_model.max_generated_tokens:
-        max_gen_tokens = self.sharded_model.max_generated_tokens
-        tokens = tokens[-max_gen_tokens:]
-
       self.state.tokens = tokens
 
       bsz, tklng = tokens.size()
@@ -263,7 +258,8 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
       )
     elif input_data.ndim == 2:
       input_tensor = torch.tensor(input_data).to(
-        device=self.device
+        device=self.device,
+        dtype=torch.int
       )
 
       # possible issue 10 fix
@@ -302,17 +298,11 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         self.state.tokens = input_tensor.clone()
 
       try:
-        in_tokens = self.state.tokens.clone().to(
-          device=self.device
-        )
+        in_tokens = self.state.tokens.clone()
 
-        in_input_pos = self.state.input_pos.clone().to(
-          device=self.device
-        )
+        in_input_pos = self.state.input_pos.clone()
 
-        in_mask = self.state.mask.clone().to(
-          device=self.device
-        )
+        in_mask = self.state.mask.clone()
 
         if hidden_state is not None:
           model_hs, model_logits = self.sharded_model.generate(
@@ -348,8 +338,8 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
 
       if model_hs is not None:
         # numpy current no support for bf16
-        if model_hs.dtype == torch.bfloat16:
-          model_hs = model_hs.float()
+        # if model_hs.dtype == torch.bfloat16:
+        #   model_hs = model_hs.float()
 
         if DEBUG >= 4:
           print("sending hidden states")
@@ -369,11 +359,11 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         self.state.curr_pos += 1
 
       # numpy current no support for bf16
-      if model_logits.dtype == torch.bfloat16:
-        model_logits = model_logits.float()
+      # if model_logits.dtype == torch.bfloat16:
+      #   model_logits = model_logits.float()
 
       return (
-        model_logits[:, -1].numpy(force=True),
+        model_logits[:, -1].float().numpy(force=True),
         self.state.to_dict(),
       )
 
