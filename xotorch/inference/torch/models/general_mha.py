@@ -208,15 +208,22 @@ class ShardedGeneralModel(nn.Module):
 
     self.model.output_hidden_states = [self.shard.end_layer]
 
-    if curr_pos > 0 and self.model.caches_are_enabled():
-      tokens = tokens[:, curr_pos].contiguous()
-      input_pos = input_pos[:, curr_pos]
-      mask = mask[:, curr_pos, None, :]
+    if curr_pos > 0:
+      if self.model.caches_are_enabled():
+        input_pos = input_pos[:, curr_pos].contiguous()
+        mask = mask[:, curr_pos, None, :].contiguous()
+      else:
+        input_pos = input_pos[:, :curr_pos + 1]
+        mask = mask[:, :curr_pos + 1, :curr_pos + 1]
     else:
       _, tklng = tokens.size()
-      tokens = tokens[:, :tklng]
-      input_pos = input_pos[:, :tklng]
-      mask = mask[:, :tklng] if self.model.caches_are_enabled() else mask[:, :tklng, :tklng]
+
+      if self.model.caches_are_enabled():
+        mask = mask[:, :tklng]
+      else:
+        mask = mask[:, :tklng, :tklng]
+
+      input_pos = input_pos[:, :tklng].squeeze()
 
     if DEBUG >= 4:
       print("model_input")

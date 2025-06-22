@@ -39,11 +39,41 @@ extras_require = {
   "amd-gpu": ["pyrsmi==0.2.0"],
   "non-windows": ["uvloop==0.21.0"],
   "jetson": ["torchtune>=0.6.1", "torchao>=0.11.0"],
-  "torch-rocm63": ["torch @ https://download.pytorch.org/whl/rocm6.3", "torchvision @ https://download.pytorch.org/whl/rocm6.3", "torchaudio @ https://download.pytorch.org/whl/rocm6.3"],
-  "torch-cuda128": ["torch @ https://download.pytorch.org/whl/cu128", "torchvision @ https://download.pytorch.org/whl/cu128", "torchaudio @ https://download.pytorch.org/whl/cu128"],
-  "torch-cuda118": ["torch @ https://download.pytorch.org/whl/cu118", "torchvision @ https://download.pytorch.org/whl/cu118", "torchaudio @ https://download.pytorch.org/whl/cu118"],
-  "torch-cuda": ["torch", "torchvision", "torchaudio"],
-  "torch-cpu": ["torch @ https://download.pytorch.org/whl/cpu", "torchvision @ https://download.pytorch.org/whl/cpu", "torchaudio @ https://download.pytorch.org/whl/cpu"]
+  "torch-rocm63": [
+    "torch @ https://download.pytorch.org/whl/rocm6.3",
+    "torchvision @ https://download.pytorch.org/whl/rocm6.3",
+    "torchaudio @ https://download.pytorch.org/whl/rocm6.3",
+    "torchtune>=0.6.1",
+    "torchao>=0.11.0"
+  ],
+  "torch-cuda128": [
+    "torch @ https://download.pytorch.org/whl/cu128",
+    "torchvision @ https://download.pytorch.org/whl/cu128",
+    "torchaudio @ https://download.pytorch.org/whl/cu128",
+    "torchtune>=0.6.1",
+    "torchao>=0.11.0"
+  ],
+  "torch-cuda118": [
+    "torch @ https://download.pytorch.org/whl/cu118",
+    "torchvision @ https://download.pytorch.org/whl/cu118",
+    "torchaudio @ https://download.pytorch.org/whl/cu118",
+    "torchtune>=0.6.1",
+    "torchao>=0.11.0"
+  ],
+  "torch-cuda": [
+    "torch", 
+    "torchvision", 
+    "torchaudio",
+    "torchtune>=0.6.1",
+    "torchao>=0.11.0"
+  ],
+  "torch-cpu": [
+    "torch @ https://download.pytorch.org/whl/cpu",
+    "torchvision @ https://download.pytorch.org/whl/cpu",
+    "torchaudio @ https://download.pytorch.org/whl/cpu",
+    "torchtune>=0.6.1",
+    "torchao>=0.11.0"
+  ]
 }
 
 use_win = False
@@ -97,7 +127,7 @@ def _add_gpu_requires():
   finally:
     pass
 
-def pytorch_install():
+def _pytorch_install():
   """
   Select the correct pytorch install.
   Will need to be updated if new versions of pytorch, cuda or rocm
@@ -127,6 +157,7 @@ def pytorch_install():
     print(f"Error with subprocess for pytorch install, using CPU install: {err}")
     install_requires.extend(extras_require["torch-cpu"])
 
+_pytorch_install()
 _add_gpu_requires()
 
 setup(
