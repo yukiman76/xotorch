@@ -1,5 +1,6 @@
 import sys
 import subprocess
+import re
 
 from setuptools import find_packages, setup
 
@@ -37,8 +38,12 @@ extras_require = {
   "nvidia-gpu": ["nvidia-ml-py==12.560.30",],
   "amd-gpu": ["pyrsmi==0.2.0"],
   "non-windows": ["uvloop==0.21.0"],
-  "torch-extras": ["torchtune>=0.6.1", "torchao>=0.11.0"],
   "jetson": ["torchtune>=0.6.1", "torchao>=0.11.0"],
+  "torch-rocm63": ["torch @ https://download.pytorch.org/whl/rocm6.3", "torchvision @ https://download.pytorch.org/whl/rocm6.3", "torchaudio @ https://download.pytorch.org/whl/rocm6.3"],
+  "torch-cuda128": ["torch @ https://download.pytorch.org/whl/cu128", "torchvision @ https://download.pytorch.org/whl/cu128", "torchaudio @ https://download.pytorch.org/whl/cu128"],
+  "torch-cuda118": ["torch @ https://download.pytorch.org/whl/cu118", "torchvision @ https://download.pytorch.org/whl/cu118", "torchaudio @ https://download.pytorch.org/whl/cu118"],
+  "torch-cuda": ["torch", "torchvision", "torchaudio"],
+  "torch-cpu": ["torch @ https://download.pytorch.org/whl/cpu", "torchvision @ https://download.pytorch.org/whl/cpu", "torchaudio @ https://download.pytorch.org/whl/cpu"]
 }
 
 use_win = False
@@ -74,14 +79,8 @@ def _add_gpu_requires():
         if is_jetson:
           print("Detected Jetson platform, adding Jetson-specific dependencies")
           install_requires.extend(extras_require["jetson"])
-        else:
-          # For non-Jetson NVIDIA platforms, add torch extras if needed
-          print("Detected non-Jetson NVIDIA platform, adding torch extras")
-          install_requires.extend(extras_require["torch-extras"])
       except Exception as e:
         print(f"Error detecting Jetson platform: {e}")
-        # Add torch extras by default for NVIDIA platforms
-        install_requires.extend(extras_require["torch-extras"])
   except subprocess.CalledProcessError:
     pass
 
@@ -98,6 +97,35 @@ def _add_gpu_requires():
   finally:
     pass
 
+def pytorch_install():
+  """
+  Select the correct pytorch install.
+  Will need to be updated if new versions of pytorch, cuda or rocm
+  """
+  try:
+    out = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'], shell=True, text=True, capture_output=True, check=False)
+    if out.returncode == 0:
+      cuda_result = subprocess.run(['nvcc', '--version'], capture_output=True, text=True, check=True)
+      cuda_out = cuda_result.stdout
+      match_ver = re.search(r'release (\d+\.\d+)', cuda_out)
+      if match_ver:
+        if match_ver == "12.8":
+          install_requires.extend(extras_require["torch-cuda128"])
+        elif match_ver == "11.8":
+          install_requires.extend(extras_require["torch-cuda118"])
+        else:
+          install_requires.extend(extras_require["torch-cuda"])
+      else:
+        install_requires.extend(extras_require["torch-cuda"])
+    else:
+      out = subprocess.run(['amd-smi', 'list', '--csv'], shell=True, text=True, capture_output=True, check=False)
+      if out.returncode == 0:
+        install_requires.extend(extras_require["torch-rocm63"])
+      else:
+        install_requires.extend(extras_require["torch-cpu"])
+  except Exception as err:
+    print(f"Error with subprocess for pytorch install, using CPU install: {err}")
+    install_requires.extend(extras_require["torch-cpu"])
 
 _add_gpu_requires()
 
