@@ -156,9 +156,11 @@ async def _download_file(repo_id: str, revision: str, path: str, target_dir: Pat
         # assert r.status in [200, 206], f"Failed to download {path} from {url}: {r.status}"
         if r.status == 401:
             raise Exception(f"Authentication required for {url}. Status: {r.status}")
-        elif r.status == 404:
+        elif r.status in [404, 416]: # not found or Range Not Satisfiable
             if "model.safetensors.index.json" not in url:
               raise Exception(f"Model not found at {url}. Status: {r.status}")
+            else:
+              return None
         elif r.status not in [200, 206]:
             raise Exception(f"Failed to download {path} from {url}: {r.status}")
         async with aiofiles.open(partial_path, 'ab' if resume_byte_pos else 'wb') as f:
