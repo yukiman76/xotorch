@@ -12,4 +12,4 @@ fi
 source .venv/bin/activate
 # Run the exo command with DEBUG=9 and the provided node ID
 # DEBUG=2 
-xot --node-id "$node_id"  --default-model "llama-3.2-1b" --inference-engine "torch"
+DEBUG=3 xot --disable-tui --node-id "$node_id"  --default-model "llama-3.2-1b" --inference-engine "torch"
