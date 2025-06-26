@@ -191,17 +191,23 @@ def calculate_repo_progress(shard: Shard, repo_id: str, revision: str, file_prog
 async def get_weight_map(repo_id: str, revision: str = "main") -> Dict[str, str]:
   target_dir = (await ensure_xot_tmp())/repo_id.replace("/", "--")
   index_file = await download_file_with_retry(repo_id, revision, "model.safetensors.index.json", target_dir)
-  async with aiofiles.open(index_file, 'r') as f: index_data = json.loads(await f.read())
-  return index_data.get("weight_map")
+  if index_file:
+    async with aiofiles.open(index_file, 'r') as f: index_data = json.loads(await f.read())
+    return index_data.get("weight_map")
+  else:
+    return None
 
 async def resolve_allow_patterns(shard: Shard, inference_engine_classname: str) -> List[str]:
+  l_allowed = ["*"]
   try:
     weight_map = await get_weight_map(get_repo(shard.model_id, inference_engine_classname))
-    return get_allow_patterns(weight_map, shard)
+    if weight_map:
+      l_allowed =  get_allow_patterns(weight_map, shard)
   except:
     if DEBUG >= 4: print(f"Error getting weight map for {shard.model_id=} and inference engine {inference_engine_classname}")
     if DEBUG >= 6: traceback.print_exc()
-    return ["*"]
+  
+  return l_allowed
 
 async def get_downloaded_size(path: Path) -> int:
   partial_path = path.with_suffix(path.suffix + ".partial")
