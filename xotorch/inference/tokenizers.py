@@ -41,8 +41,10 @@ async def resolve_tokenizer(repo_id: Union[str, PathLike]):
 async def _resolve_tokenizer(repo_id_or_local_path: Union[str, PathLike]):
   try:
     if DEBUG >= 4: print(f"Trying AutoProcessor for {repo_id_or_local_path}")
-    processor = AutoProcessor.from_pretrained(repo_id_or_local_path, use_fast=True if "Mistral-Large" in f"{repo_id_or_local_path}" else False, trust_remote_code=True)
+      
+    processor = AutoProcessor.from_pretrained(repo_id_or_local_path, trust_remote_code=True)
     if not hasattr(processor, 'eos_token_id'):
+      
       processor.eos_token_id = getattr(processor, 'tokenizer', getattr(processor, '_tokenizer', processor)).eos_token_id
     if not hasattr(processor, 'encode'):
       processor.encode = getattr(processor, 'tokenizer', getattr(processor, '_tokenizer', processor)).encode
