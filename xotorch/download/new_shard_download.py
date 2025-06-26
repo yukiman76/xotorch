@@ -131,7 +131,16 @@ async def file_meta(repo_id: str, revision: str, path: str) -> Tuple[int, str]:
 async def download_file_with_retry(repo_id: str, revision: str, path: str, target_dir: Path, on_progress: Callable[[int, int], None] = lambda _, __: None) -> Path:
   n_attempts = 30
   for attempt in range(n_attempts):
-    try: return await _download_file(repo_id, revision, path, target_dir, on_progress)
+    try: 
+      try:
+        return await _download_file(repo_id, revision, path, target_dir, on_progress)
+      except Exception as e0:
+        # not all models have this 
+        if "model.safetensors.index.json" not in path:
+          return None
+        else:
+          raise e0
+      
     except Exception as e:
       if isinstance(e, FileNotFoundError) or attempt == n_attempts - 1: raise e
       print(f"Download error on attempt {attempt}/{n_attempts} for {repo_id=} {revision=} {path=} {target_dir=}")
