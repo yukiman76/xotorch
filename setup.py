@@ -68,9 +68,9 @@ extras_require = {
     "torchao>=0.11.0"
   ],
   "torch-cpu": [
-    "torch @ https://download.pytorch.org/whl/cpu",
-    "torchvision @ https://download.pytorch.org/whl/cpu",
-    "torchaudio @ https://download.pytorch.org/whl/cpu",
+    "torch",
+    "torchvision",
+    "torchaudio",
     "torchtune>=0.6.1",
     "torchao>=0.11.0"
   ]
