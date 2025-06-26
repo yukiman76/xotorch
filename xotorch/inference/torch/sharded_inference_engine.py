@@ -81,7 +81,6 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
       
       self.cache_setup = True
 
-
   def clear_model(self):
     """
     Clear out model and shard
@@ -338,8 +337,8 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
 
       if model_hs is not None:
         # numpy current no support for bf16
-        # if model_hs.dtype == torch.bfloat16:
-        #   model_hs = model_hs.float()
+        if model_hs.dtype == torch.bfloat16:
+          model_hs = model_hs.float()
 
         if DEBUG >= 4:
           print("sending hidden states")
@@ -359,8 +358,8 @@ class TorchDynamicShardInferenceEngine(InferenceEngine):
         self.state.curr_pos += 1
 
       # numpy current no support for bf16
-      # if model_logits.dtype == torch.bfloat16:
-      #   model_logits = model_logits.float()
+      if model_logits.dtype == torch.bfloat16:
+        model_logits = model_logits.float()
 
       return (
         model_logits[:, -1].float().numpy(force=True),
