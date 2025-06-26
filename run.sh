@@ -11,4 +11,4 @@ fi
 
 source .venv/bin/activate
 # Run the exo command with DEBUG=9 and the provided node ID
-DEBUG=9 xot --node-id "$node_id"  --default-model "llama-3.2-1b"
+DEBUG=9 xot --node-id "$node_id"  --default-model "llama-3.2-1b" --inference-engine "torch"
