@@ -165,14 +165,17 @@ async def _download_file(repo_id: str, revision: str, path: str, target_dir: Pat
           while chunk := await r.content.read(8 * 1024 * 1024): on_progress(n_read := n_read + await f.write(chunk), length)
 
 
-  final_hash = await calc_hash(partial_path, type="sha256" if len(remote_hash) == 64 else "sha1")
-  integrity = final_hash == remote_hash
-  if not integrity:
-    try: await aios.remove(partial_path)
-    except Exception as e: print(f"Error removing partial file {partial_path}: {e}")
-    raise Exception(f"Downloaded file {target_dir/path} has hash {final_hash} but remote hash is {remote_hash}")
-  await aios.rename(partial_path, target_dir/path)
-  return target_dir/path
+  if await aios.path.exists(target_dir/path):
+    final_hash = await calc_hash(partial_path, type="sha256" if len(remote_hash) == 64 else "sha1")
+    integrity = final_hash == remote_hash
+    if not integrity:
+      try: await aios.remove(partial_path)
+      except Exception as e: print(f"Error removing partial file {partial_path}: {e}")
+      raise Exception(f"Downloaded file {target_dir/path} has hash {final_hash} but remote hash is {remote_hash}")
+    await aios.rename(partial_path, target_dir/path)
+    return target_dir/path
+  else:
+    return None
 
 
 def calculate_repo_progress(shard: Shard, repo_id: str, revision: str, file_progress: Dict[str, RepoFileProgressEvent], all_start_time: float) -> RepoProgressEvent:
@@ -196,8 +199,8 @@ async def resolve_allow_patterns(shard: Shard, inference_engine_classname: str) 
     weight_map = await get_weight_map(get_repo(shard.model_id, inference_engine_classname))
     return get_allow_patterns(weight_map, shard)
   except:
-    if DEBUG >= 1: print(f"Error getting weight map for {shard.model_id=} and inference engine {inference_engine_classname}")
-    if DEBUG >= 1: traceback.print_exc()
+    if DEBUG >= 4: print(f"Error getting weight map for {shard.model_id=} and inference engine {inference_engine_classname}")
+    if DEBUG >= 6: traceback.print_exc()
     return ["*"]
 
 async def get_downloaded_size(path: Path) -> int:
